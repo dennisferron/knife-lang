@@ -1,0 +1,10 @@
+
+${includes}
+
+int main()
+{
+	${            program
+	}
+	${A}${B}
+	return 0;
+}

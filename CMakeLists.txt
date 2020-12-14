@@ -6,10 +6,10 @@ set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(antlr4-runtime)
 
 set(ANTLR_COMMAND java org.antlr.v4.Tool)
-set(ANTLR_OPTIONS -Dlanguage=Cpp -o ${CMAKE_CURRENT_BINARY_DIR}/parser)
-set(ANTLR_GRAMMAR ${CMAKE_CURRENT_SOURCE_DIR}/Expr.g4)
+set(ANTLR_OPTIONS -Dlanguage=Cpp -o ${CMAKE_CURRENT_BINARY_DIR})
 
-set(EXPR_GEN_INPUTS data/template.inl Expr.g4)
+set(EXPR_GRAMMAR ${CMAKE_CURRENT_SOURCE_DIR}/Expr.g4)
+set(EXPR_GEN_INPUTS Expr.g4)
 set(EXPR_GEN_OUTPUTS ExprBaseListener.cpp
         ExprBaseListener.h
         ExprLexer.cpp
@@ -20,13 +20,24 @@ set(EXPR_GEN_OUTPUTS ExprBaseListener.cpp
         ExprParser.h)
 
 add_custom_command(
-        COMMAND ${ANTLR_COMMAND} ${ANTLR_OPTIONS} ${ANTLR_GRAMMAR}
+        COMMAND ${ANTLR_COMMAND} ${ANTLR_OPTIONS} ${EXPR_GRAMMAR}
         DEPENDS ${EXPR_GEN_INPUTS}
         OUTPUT ${EXPR_GEN_OUTPUTS}
-        COMMENT "Running ANTLR4 (Java) to generate a parser."
+        COMMENT "Running ANTLR4 (Java) to generate the Expr parser."
 )
 
-add_executable(antlr4_demo main.cpp ${EXPR_GEN_OUTPUTS})
+set(SUBST_GRAMMAR ${CMAKE_CURRENT_SOURCE_DIR}/Subst.g4)
+set(SUBST_GEN_INPUTS Subst.g4)
+set(SUBST_GEN_OUTPUTS Subst.cpp Subst.h)
+
+add_custom_command(
+        COMMAND ${ANTLR_COMMAND} ${ANTLR_OPTIONS} ${SUBST_GRAMMAR}
+        DEPENDS ${SUBST_GEN_INPUTS}
+        OUTPUT ${SUBST_GEN_OUTPUTS}
+        COMMENT "Running ANTLR4 (Java) to generate the Subst parser."
+)
+
+add_executable(antlr4_demo main.cpp ${EXPR_GEN_OUTPUTS} ${SUBST_GEN_OUTPUTS})
 target_link_libraries(antlr4_demo antlr4_static)
 
 target_include_directories(antlr4_demo
@@ -42,7 +53,7 @@ set(TRANSPILE_OUTPUTS foo.xyz)
 
 add_custom_command(
         TARGET antlr4_demo POST_BUILD
-        COMMAND antlr4_demo -o ${TRANSPILE_OUTPUTS} -e data/t.expr -t data/template.inl
+        COMMAND antlr4_demo -o ${TRANSPILE_OUTPUTS} -e ${CMAKE_CURRENT_SOURCE_DIR}/data/t.expr -t ${CMAKE_CURRENT_SOURCE_DIR}/skeleton/main.cpp.txt
         DEPENDS ${TRANSPILE_INPUTS}
         #OUTPUT ${TRANSPILE_OUTPUTS}
         COMMENT "Running transpiler bootstrap step."
