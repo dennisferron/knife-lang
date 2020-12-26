@@ -23,11 +23,11 @@ class CerrErrorListener : public antlr4::BaseErrorListener
 
 int main(int argc, char* argv[])
 {
-    if (argc != 7)
+    if (argc != 5)
     {
         std::cerr << "Usage: " << argv[0]
                   << " -o <output file>"
-                  << " -t <template file>"
+                  //<< " -t <template file>"
                   << " -e <expr file>\n";
         return -1;
     }
@@ -64,11 +64,11 @@ int main(int argc, char* argv[])
         std::cerr << "Required: -e <expr file>\n";
         return -1;
     }
-    else if (template_file.empty())
-    {
-        std::cerr << "Required: -t <template file>\n";
-        return -1;
-    }
+//    else if (template_file.empty())
+//    {
+//        std::cerr << "Required: -t <template file>\n";
+//        return -1;
+//    }
 
     antlr4::ANTLRFileStream expr_strm(expr_file);
 
@@ -97,6 +97,7 @@ int main(int argc, char* argv[])
     antlr4::tree::ParseTree *expr_tree = expr_parser.prog();
     std::cout << expr_tree->toStringTree(&expr_parser, true) << std::endl;
 
+    /*
     std::cout << "\nSubst lexer:\n";
 
     antlr4::ANTLRFileStream template_strm(template_file);
@@ -139,7 +140,27 @@ int main(int argc, char* argv[])
                 break;
         }
     }
+     */
 
+    // "Generate" code
+    std::ofstream ofs(output_file);
+
+    std::string data = R"(
+    {
+       "application": "hiking",
+       "reputons": [
+       {
+           "rater": "HikingAsylum",
+           "assertion": "advanced",
+           "rated": "Marilyn C",
+           "rating": 0.90,
+           "confidence": 0.99
+         }
+       ]
+    }
+)";
+    ofs << data;
+    ofs.close();
 
     return 0;
 }

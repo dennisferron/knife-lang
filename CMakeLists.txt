@@ -48,15 +48,32 @@ set(extra_static_compile_flags "-DUSE_UTF8_INSTEAD_OF_CODECVT -DANTLR4CPP_STATIC
 
 set_target_properties(antlr4_demo PROPERTIES COMPILE_FLAGS ${extra_static_compile_flags})
 
-set(TRANSPILE_INPUTS data/t.expr data/template.inl)
-set(TRANSPILE_OUTPUTS foo.xyz)
+set(transpile_inputs ${CMAKE_CURRENT_SOURCE_DIR}/samples/t.expr)
+set(transpile_output x.json)
 
 add_custom_command(
         TARGET antlr4_demo POST_BUILD
-        COMMAND antlr4_demo -o ${TRANSPILE_OUTPUTS} -e ${CMAKE_CURRENT_SOURCE_DIR}/data/t.expr -t ${CMAKE_CURRENT_SOURCE_DIR}/skeleton/main.cpp.txt
-        DEPENDS ${TRANSPILE_INPUTS}
-        #OUTPUT ${TRANSPILE_OUTPUTS}
+        COMMAND antlr4_demo -o ${transpile_output} -e ${transpile_inputs}
+        DEPENDS ${transpile_inputs}
+        #OUTPUT ${transpile_output}
         COMMENT "Running transpiler bootstrap step."
+)
+
+set(stst_templates_dir ${CMAKE_CURRENT_SOURCE_DIR}/templates)
+set(stst_template_name hello.hello)
+#set(stst_json ${transpile_output})
+set(stst_json ${CMAKE_CURRENT_SOURCE_DIR}/hello.json)
+
+set(stst_template_file hello.stg)
+set(stst_inputs ${stst_json} ${stst_template_file})
+set(stst_output generated_hello.txt)
+
+add_custom_command(
+        TARGET antlr4_demo POST_BUILD
+        COMMAND stst -o ${stst_output} -t ${stst_templates_dir} ${stst_template_name} ${stst_json}
+        DEPENDS ${stst_inputs}
+        #OUTPUT ${stst_output}
+        COMMENT "Running String Template to generate code file."
 )
 
 # TODO:  Create a grammar for the template language
