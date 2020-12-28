@@ -1,0 +1,14 @@
+{
+	"className":"prog",
+
+	"vars":[
+		"b",
+		"x"
+	],
+
+	"statements":[
+		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
+		{ "template":"print_statement", "args":{"var":"x"}},
+		{ "template":"return_statement", "args":{"value":42}}
+	]
+}

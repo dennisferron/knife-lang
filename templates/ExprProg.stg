@@ -1,0 +1,34 @@
+
+header(vars, className) ::= <<
+// Generated Header 
+
+class $className$
+{
+private:
+	$vars:decl_var();separator="\n"$
+	
+public:
+	int run();
+};
+>>
+
+
+decl_var(v) ::= <<int $v$ = 0;>>
+
+source(statements, className) ::= <<
+// Generated Source
+
+#include "$className$.hpp"
+
+int $className$::run()
+{
+	$statements:select_statement();separator="\n"$
+}
+
+>>
+
+select_statement(s) ::= <<$(s.template)(s.args)$;>>
+
+print_statement(args) ::= <<std::cout << "$args.var$=" << $args.var$ << "\\n">>
+assign_statement(args) ::= <<$args.assignee$ = $args.expr$>>
+return_statement(args) ::= <<return $args.value$>>

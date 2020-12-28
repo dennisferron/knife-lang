@@ -26,17 +26,6 @@ add_custom_command(
         COMMENT "Running ANTLR4 (Java) to generate the Expr parser."
 )
 
-set(SUBST_GRAMMAR ${CMAKE_CURRENT_SOURCE_DIR}/Subst.g4)
-set(SUBST_GEN_INPUTS Subst.g4)
-set(SUBST_GEN_OUTPUTS Subst.cpp Subst.h)
-
-add_custom_command(
-        COMMAND ${ANTLR_COMMAND} ${ANTLR_OPTIONS} ${SUBST_GRAMMAR}
-        DEPENDS ${SUBST_GEN_INPUTS}
-        OUTPUT ${SUBST_GEN_OUTPUTS}
-        COMMENT "Running ANTLR4 (Java) to generate the Subst parser."
-)
-
 add_executable(antlr4_demo main.cpp ${EXPR_GEN_OUTPUTS} ${SUBST_GEN_OUTPUTS})
 target_link_libraries(antlr4_demo antlr4_static)
 
@@ -49,7 +38,7 @@ set(extra_static_compile_flags "-DUSE_UTF8_INSTEAD_OF_CODECVT -DANTLR4CPP_STATIC
 set_target_properties(antlr4_demo PROPERTIES COMPILE_FLAGS ${extra_static_compile_flags})
 
 set(transpile_inputs ${CMAKE_CURRENT_SOURCE_DIR}/samples/t.expr)
-set(transpile_output x.json)
+set(transpile_output output.json)
 
 add_custom_command(
         TARGET antlr4_demo POST_BUILD
@@ -60,23 +49,53 @@ add_custom_command(
 )
 
 set(stst_templates_dir ${CMAKE_CURRENT_SOURCE_DIR}/templates)
-set(stst_template_name hello.hello)
-#set(stst_json ${transpile_output})
-set(stst_json ${CMAKE_CURRENT_SOURCE_DIR}/hello.json)
+set(stst_json ${transpile_output})
 
-set(stst_template_file hello.stg)
-set(stst_inputs ${stst_json} ${stst_template_file})
-set(stst_output generated_hello.txt)
+set(stst_template_file ExprProg.stg)
+set(stst_inputs ${stst_json} ExprProg.stg)
 
+set(stst_template_hpp ExprProg.header)
+set(stst_output_hpp prog.hpp)
 add_custom_command(
         TARGET antlr4_demo POST_BUILD
-        COMMAND stst -o ${stst_output} -t ${stst_templates_dir} ${stst_template_name} ${stst_json}
+        COMMAND stst
+            -o  ${stst_output_hpp}
+            -t  ${stst_templates_dir}
+                ${stst_template_hpp}
+                ${stst_json}
         DEPENDS ${stst_inputs}
-        #OUTPUT ${stst_output}
-        COMMENT "Running String Template to generate code file."
+        #OUTPUT ${stst_output_hpp}
+        COMMENT "Running StringTemplate Standalone Tool (stst) to generate header (hpp)."
 )
 
-# TODO:  Create a grammar for the template language
+set(stst_template_cpp ExprProg.source)
+set(stst_output_cpp prog.cpp)
+add_custom_command(
+        TARGET antlr4_demo POST_BUILD
+        COMMAND stst
+            -o  ${stst_output_cpp}
+            -t  ${stst_templates_dir}
+                ${stst_template_cpp}
+                ${stst_json}
+        DEPENDS ${stst_inputs}
+        #OUTPUT ${stst_output_cpp}
+        COMMENT "Running StringTemplate Standalone Tool (stst) to generate source (cpp)."
+)
+
+set(stst_template_sql SqlScripts.database)
+set(stst_output_sql prog.sql)
+add_custom_command(
+        TARGET antlr4_demo POST_BUILD
+        COMMAND stst
+        -o  ${stst_output_sql}
+        -t  ${stst_templates_dir}
+        ${stst_template_sql}
+        ${stst_json}
+        DEPENDS SqlScripts.stg ${transpile_output}
+        #OUTPUT ${stst_output_sql}
+        COMMENT "Running StringTemplate Standalone Tool (stst) to generate database script (sql)."
+)
+
 # TODO:  Move the transpiler to a subfolder
 # TODO:  Build the stage_1 transpiler from stage_0 output.
 # TODO:  Add an example using the stage_1 tool to build user program.

@@ -1,0 +1,8 @@
+database() ::= <<
+CREATE TABLE foo (
+    column1 INTEGER PRIMARY KEY,
+    column2 TEXT
+);
+INSERT INTO foo (column1, column2) VALUES (1, "a");
+INSERT INTO foo (column1, column2) VALUES (2, "b");
+>>

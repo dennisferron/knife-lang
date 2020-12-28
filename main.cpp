@@ -1,7 +1,6 @@
 #include "antlr4-runtime.h"
 #include "ExprLexer.h"
 #include "ExprParser.h"
-#include "Subst.h"
 
 #include <iostream>
 #include <string>
@@ -146,19 +145,20 @@ int main(int argc, char* argv[])
     std::ofstream ofs(output_file);
 
     std::string data = R"(
-    {
-       "application": "hiking",
-       "reputons": [
-       {
-           "rater": "HikingAsylum",
-           "assertion": "advanced",
-           "rated": "Marilyn C",
-           "rating": 0.90,
-           "confidence": 0.99
-         }
-       ]
-    }
-)";
+{
+	"className":"prog",
+
+	"vars":[
+		"b",
+		"x"
+	],
+
+	"statements":[
+		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
+		{ "template":"print_statement", "args":{"var":"x"}},
+		{ "template":"return_statement", "args":{"value":42}}
+	]
+})";
     ofs << data;
     ofs.close();
 
