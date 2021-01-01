@@ -20,6 +20,8 @@ source(statements, className) ::= <<
 
 #include "$className$.hpp"
 
+#include <iostream>
+
 int $className$::run()
 {
 	$statements:select_statement();separator="\n"$
