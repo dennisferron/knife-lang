@@ -1,8 +1,12 @@
 database() ::= <<
-CREATE TABLE foo (
+CREATE TABLE IF NOT EXISTS foo (
     column1 INTEGER PRIMARY KEY,
     column2 TEXT
 );
-INSERT INTO foo (column1, column2) VALUES (1, "a");
-INSERT INTO foo (column1, column2) VALUES (2, "b");
+INSERT INTO foo (column1, column2) VALUES (1, "a")
+    ON CONFLICT(column1) DO
+UPDATE SET column2="aa";
+INSERT INTO foo (column1, column2) VALUES (2, "b")
+    ON CONFLICT(column1) DO
+UPDATE SET column2="bb";
 >>

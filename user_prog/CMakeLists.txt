@@ -11,12 +11,10 @@ add_executable(user_prog
 target_include_directories(user_prog PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR})
 
-set(transpile_inputs ${CMAKE_SOURCE_DIR}/samples/t.expr)
 set(transpile_output output.json)
-
 add_custom_command(
-        COMMAND transpiler -o ${transpile_output} -e ${transpile_inputs}
-        DEPENDS ${transpile_inputs}
+        COMMAND transpiler -o ${transpile_output} -e ${CMAKE_CURRENT_SOURCE_DIR}/t.expr
+        DEPENDS t.expr
         OUTPUT ${transpile_output}
         COMMENT "Running transpiler to generate JSON data for templates."
 )
@@ -27,7 +25,7 @@ set(stst_output_hpp prog.hpp)
 add_custom_command(
         COMMAND stst
             -o  ${stst_output_hpp}
-            -t  ${stst_templates_dir}
+            -t  ${CMAKE_SOURCE_DIR}/templates
                 ExprProg.header
                 ${transpile_output}
         DEPENDS ${transpile_output} ../templates/ExprProg.stg
@@ -55,7 +53,22 @@ add_custom_command(
                 SqlScripts.database
                 ${transpile_output}
         DEPENDS ${transpile_output} ../templates/SqlScripts.stg
-        #OUTPUT ${stst_output_sql}
-        TARGET user_prog PRE_LINK
+        OUTPUT ${stst_output_sql}
+        #TARGET user_prog PRE_LINK
         COMMENT "Running StringTemplate Standalone Tool (stst) to generate database script (sql)."
+)
+
+set(output_db prog.db)
+add_custom_command(
+        COMMAND sqlite3 ${output_db} ".read ${stst_output_sql}"
+        DEPENDS ${stst_output_sql}
+        OUTPUT ${output_db}
+        #TARGET user_prog POST_BUILD
+        COMMENT "Running Sqlite3 to generate database file (db)."
+)
+
+add_custom_target(
+        prog_db ALL
+        COMMENT "Dummy target to cause db to be generated."
+        DEPENDS ${output_db}
 )
