@@ -6,25 +6,30 @@ set(CMAKE_CXX_STANDARD 20)
 set(ANTLR_COMMAND java org.antlr.v4.Tool)
 set(ANTLR_OPTIONS -Dlanguage=Cpp -o ${CMAKE_CURRENT_BINARY_DIR})
 
-set(EXPR_GRAMMAR ${CMAKE_CURRENT_SOURCE_DIR}/Expr.g4)
-set(EXPR_GEN_INPUTS Expr.g4)
-set(EXPR_GEN_OUTPUTS ExprBaseListener.cpp
-        ExprBaseListener.h
-        ExprLexer.cpp
-        ExprLexer.h
-        ExprListener.cpp
-        ExprListener.h
-        ExprParser.cpp
-        ExprParser.h)
-
+set(EXPR_LEXER_OUTPUTS ExprLexer.cpp ExprLexer.h)
 add_custom_command(
-        COMMAND ${ANTLR_COMMAND} ${ANTLR_OPTIONS} ${EXPR_GRAMMAR}
-        DEPENDS ${EXPR_GEN_INPUTS}
-        OUTPUT ${EXPR_GEN_OUTPUTS}
+        COMMAND ${ANTLR_COMMAND} ${ANTLR_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR}/ExprLexer.g4
+        DEPENDS ExprLexer.g4
+        OUTPUT ${EXPR_LEXER_OUTPUTS} ExprLexer.tokens
+        COMMENT "Running ANTLR4 (Java) to generate the Expr lexer."
+)
+
+set(EXPR_PARSER_OUTPUTS
+        ExprParserBaseListener.cpp
+        ExprParserBaseListener.h
+        ExprParserListener.cpp
+        ExprParserListener.h
+        ExprParser.cpp
+        ExprParser.h
+)
+add_custom_command(
+        COMMAND ${ANTLR_COMMAND} ${ANTLR_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR}/ExprParser.g4
+        DEPENDS ExprParser.g4 ExprLexer.tokens
+        OUTPUT ${EXPR_PARSER_OUTPUTS}
         COMMENT "Running ANTLR4 (Java) to generate the Expr parser."
 )
 
-add_executable(transpiler main.cpp ${EXPR_GEN_OUTPUTS} ${SUBST_GEN_OUTPUTS})
+add_executable(transpiler main.cpp ${EXPR_LEXER_OUTPUTS} ${EXPR_PARSER_OUTPUTS} ${SUBST_GEN_OUTPUTS})
 target_link_libraries(transpiler antlr4_static)
 
 target_include_directories(transpiler
