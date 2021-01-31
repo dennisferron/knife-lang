@@ -29,7 +29,7 @@ add_custom_command(
         COMMENT "Running ANTLR4 (Java) to generate the Expr parser."
 )
 
-add_executable(transpiler main.cpp ${EXPR_LEXER_OUTPUTS} ${EXPR_PARSER_OUTPUTS} ${SUBST_GEN_OUTPUTS})
+add_executable(transpiler main.cpp ${EXPR_LEXER_OUTPUTS} ${EXPR_PARSER_OUTPUTS} ${SUBST_GEN_OUTPUTS} ParseListener.cpp ParseListener.hpp)
 target_link_libraries(transpiler antlr4_static)
 
 target_include_directories(transpiler

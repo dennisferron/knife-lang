@@ -23,8 +23,7 @@
  */
 lexer grammar ExprLexer;
 
-EXPR_SQL : 'SQL';
-EXPR_OPEN_BRACE : '{' -> mode(SQLITE);
+EXPR_OPEN_QUASIQUOTE : '{|' -> mode(QUASIQUOTE);
 EXPR_PLUS : '+';
 EXPR_MINUS : '-';
 EXPR_MULT : '*';
@@ -34,14 +33,20 @@ EXPR_ID  :   [a-zA-Z]+ ;      // match identifiers <label id="code.tour.expr.3"/
 EXPR_INT :   [0-9]+ ;         // match integers
 EXPR_NEWLINE: '\r'? '\n' ;    // return newlines to parser (is end-statement signal)
 EXPR_WS  :   [ \t]+ -> skip ; // toss out whitespace
+EXPR_OPEN_PAR : '(';
+EXPR_CLOSE_PAR : ')';
+
+mode QUASIQUOTE;
+QUASIQUOTE_SQL : 'SQL' -> mode(SQLITE);
+QUASIQUOTE_WS  :   [ \t]+ -> skip ; // toss out whitespace
 
 mode SQLITE;
 
-SQL_CLOSE_BRACE : '}' -> mode(DEFAULT_MODE);
+SQL_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
 SCOL: ';';
 DOT: '.';
-OPEN_PAR: '(';
-CLOSE_PAR: ')';
+SQL_OPEN_PAR: '(';
+SQL_CLOSE_PAR: ')';
 COMMA: ',';
 SQL_ASSIGN: '=';
 SQL_STAR: '*';

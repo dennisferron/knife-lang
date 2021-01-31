@@ -1,6 +1,7 @@
 #include "antlr4-runtime.h"
 #include "ExprLexer.h"
 #include "ExprParser.h"
+#include "ParseListener.hpp"
 
 #include <iostream>
 #include <string>
@@ -22,6 +23,13 @@ class CerrErrorListener : public antlr4::BaseErrorListener
 
 int main(int argc, char* argv[])
 {
+    std::cout << "Command line:\n";
+    for (int i=0; i<argc; i++)
+    {
+        std::cout << argv[i] << " ";
+    }
+    std::cout << "\n";
+
     if (argc != 5)
     {
         std::cerr << "Usage: " << argv[0]
@@ -94,7 +102,11 @@ int main(int argc, char* argv[])
 
     ExprParser expr_parser(&expr_tokens);
     antlr4::tree::ParseTree *expr_tree = expr_parser.prog();
-    std::cout << expr_tree->toStringTree(&expr_parser, true) << std::endl;
+    //std::cout << expr_tree->toStringTree(&expr_parser, true) << std::endl;
+
+    antlr4::tree::ParseTreeWalker walker;
+    ParseListener listener(&expr_parser);
+    walker.walk(&listener, expr_tree); // initiate walk of tree with listener
 
     /*
     std::cout << "\nSubst lexer:\n";
