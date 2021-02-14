@@ -21,6 +21,13 @@ class CerrErrorListener : public antlr4::BaseErrorListener
     }
 };
 
+enum class ArgMode
+{
+    Default,
+    Mode_o,
+    Mode_i
+};
+
 int main(int argc, char* argv[])
 {
     std::cout << "Command line:\n";
@@ -30,131 +37,90 @@ int main(int argc, char* argv[])
     }
     std::cout << "\n";
 
-    if (argc != 5)
+    std::string output_base_name = "";
+    std::string input_folder = "";
+    std::vector<std::string> input_files;
+
+    ArgMode mode = ArgMode::Default;
+    for (int i=1; i<argc; i++)
     {
-        std::cerr << "Usage: " << argv[0]
-                  << " -o <output file>"
-                  //<< " -t <template file>"
-                  << " -e <expr file>\n";
-        return -1;
-    }
-
-    std::string output_file;
-    std::string expr_file;
-    std::string template_file;
-
-    for (int i=1; i<argc; i+=2)
-    {
-        std::string option = argv[i];
-        std::string value = argv[i+1];
-
-        if (option == "-o")
-            output_file = value;
-        else if (option == "-e")
-            expr_file = value;
-        else if (option == "-t")
-            template_file = value;
-        else
+        std::string arg_str = argv[i];
+        switch (mode)
         {
-            std::cerr << "Invalid option: " << option << "\n";
-            return -1;
-        }
-    }
-
-    if (output_file.empty())
-    {
-        std::cerr << "Required: -o <output file>\n";
-        return -1;
-    }
-    else if (expr_file.empty())
-    {
-        std::cerr << "Required: -e <expr file>\n";
-        return -1;
-    }
-//    else if (template_file.empty())
-//    {
-//        std::cerr << "Required: -t <template file>\n";
-//        return -1;
-//    }
-
-    antlr4::ANTLRFileStream expr_strm(expr_file);
-
-    if (expr_strm.size() == 0)
-    {
-        std::cerr << "Unable to open expr file (or file is empty): "
-            << expr_file << "\n";
-        return -1;
-    }
-
-    ExprLexer expr_lexer(&expr_strm);
-
-    CerrErrorListener expr_error_listner;
-    expr_lexer.removeErrorListeners();
-    expr_lexer.addErrorListener(&expr_error_listner);
-
-    antlr4::CommonTokenStream expr_tokens(&expr_lexer);
-
-//    expr_tokens.fill();
-//    for (auto expr_token : expr_tokens.getTokens())
-//    {
-//        std::cout << expr_token->toString() << std::endl;
-//    }
-
-    ExprParser expr_parser(&expr_tokens);
-    antlr4::tree::ParseTree *expr_tree = expr_parser.prog();
-    //std::cout << expr_tree->toStringTree(&expr_parser, true) << std::endl;
-
-    antlr4::tree::ParseTreeWalker walker;
-    ParseListener listener(&expr_parser);
-    walker.walk(&listener, expr_tree); // initiate walk of tree with listener
-
-    /*
-    std::cout << "\nSubst lexer:\n";
-
-    antlr4::ANTLRFileStream template_strm(template_file);
-
-    if (template_strm.size() == 0)
-    {
-        std::cerr << "Unable to open template file (or file is empty): "
-                  << template_file << "\n";
-        return -1;
-    }
-
-    std::cout << "Template file size: " << template_strm.size() << "\n";
-    std::cout << "Template file: " << template_strm.toString() << "\n";
-
-    Subst subst_lexer(&template_strm);
-
-    CerrErrorListener subst_error_listner;
-    subst_lexer.removeErrorListeners();
-    subst_lexer.addErrorListener(&subst_error_listner);
-    
-    antlr4::CommonTokenStream subst_tokens(&subst_lexer);
-
-    subst_tokens.fill();
-    for (auto subst_token : subst_tokens.getTokens())
-    {
-        switch (subst_token->getType())
-        {
-            case Subst::RawText:
-                std::cout << "RawText: "
-                    << subst_token->getText()
-                    << "\n";
+            case ArgMode::Mode_o:
+                output_base_name = arg_str;
+                mode = ArgMode::Default;
                 break;
-            case Subst::Identifier:
-                std::cout << "Identifier: "
-                    << subst_token->getText()
-                    << "\n";
+            case ArgMode::Mode_i:
+                input_folder = arg_str;
+                mode = ArgMode::Default;
                 break;
             default:
-                // Do nothing
-                break;
+                if (arg_str == "-o")
+                    mode = ArgMode::Mode_o;
+                else if (arg_str == "-i")
+                    mode = ArgMode::Mode_i;
+                else if (arg_str[0] == '-')
+                {
+                    std::cerr << "Unrecognized option " << arg_str << "\n";
+                    return -1;
+                }
+                else
+                    input_files.push_back(arg_str);
         }
     }
-     */
+
+    if (output_base_name == "" ||
+        input_folder == "" ||
+        input_files.empty())
+    {
+        std::cerr << "Usage: " << argv[0]
+                  << " -o <output base name>"
+                  << " <one or more input files>\n";
+        return -1;
+    }
+
+    std::string output_json_file = output_base_name + ".json";
+    std::string output_stg_file = output_base_name + ".stg";
+
+    for (std::string input_file : input_files)
+    {
+        std::string expr_file = input_folder + "\\" + input_file;
+
+        antlr4::ANTLRFileStream expr_strm(expr_file);
+
+        if (expr_strm.size() == 0)
+        {
+            std::cerr << "Unable to open expr file (or file is empty): "
+                      << expr_file << "\n";
+            return -1;
+        }
+
+        ExprLexer expr_lexer(&expr_strm);
+
+        CerrErrorListener expr_error_listner;
+        expr_lexer.removeErrorListeners();
+        expr_lexer.addErrorListener(&expr_error_listner);
+
+        antlr4::CommonTokenStream expr_tokens(&expr_lexer);
+
+        //    expr_tokens.fill();
+        //    for (auto expr_token : expr_tokens.getTokens())
+        //    {
+        //        std::cout << expr_token->toString() << std::endl;
+        //    }
+
+        ExprParser expr_parser(&expr_tokens);
+        antlr4::tree::ParseTree* expr_tree = expr_parser.prog();
+        //std::cout << expr_tree->toStringTree(&expr_parser, true) << std::endl;
+
+        antlr4::tree::ParseTreeWalker walker;
+        ParseListener listener(&expr_parser);
+        walker.walk(&listener, expr_tree); // initiate walk of tree with listener
+    }
 
     // "Generate" code
-    std::ofstream ofs(output_file);
+    std::ofstream ofs(output_json_file);
 
     std::string data = R"(
 {
@@ -173,6 +139,61 @@ int main(int argc, char* argv[])
 })";
     ofs << data;
     ofs.close();
+
+    std::string stg_data = R"(
+database() ::= <<
+CREATE TABLE IF NOT EXISTS foo (
+    column1 INTEGER PRIMARY KEY,
+    column2 TEXT
+);
+INSERT INTO foo (column1, column2) VALUES (1, "a")
+    ON CONFLICT(column1) DO
+UPDATE SET column2="aa";
+INSERT INTO foo (column1, column2) VALUES (2, "b")
+    ON CONFLICT(column1) DO
+UPDATE SET column2="bb";
+>>
+
+header(vars, className) ::= <<
+// Generated Header
+
+class $className$
+{
+private:
+	$vars:decl_var();separator="\n"$
+
+public:
+	int run();
+};
+>>
+
+
+decl_var(v) ::= <<int $v$ = 0;>>
+
+source(statements, className) ::= <<
+// Generated Source
+
+#include "$className$.hpp"
+
+#include <iostream>
+
+int $className$::run()
+{
+	$statements:select_statement();separator="\n"$
+}
+
+>>
+
+select_statement(s) ::= <<$(s.template)(s.args)$;>>
+
+print_statement(args) ::= <<std::cout << "$args.var$=" << $args.var$ << "\\n">>
+assign_statement(args) ::= <<$args.assignee$ = $args.expr$>>
+return_statement(args) ::= <<return $args.value$>>
+    )";
+
+    std::ofstream ofs_stg(output_stg_file);
+    ofs_stg << stg_data;
+    ofs_stg.close();
 
     return 0;
 }

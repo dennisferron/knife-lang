@@ -29,16 +29,31 @@ EXPR_MINUS : '-';
 EXPR_MULT : '*';
 EXPR_DIV : '/';
 EXPR_ASGN : '=';
-EXPR_ID  :   [a-zA-Z]+ ;      // match identifiers <label id="code.tour.expr.3"/>
+EXPR_ID  :   [a-zA-Z_] [a-zA-Z_0-9]* ;
 EXPR_INT :   [0-9]+ ;         // match integers
 EXPR_NEWLINE: '\r'? '\n' ;    // return newlines to parser (is end-statement signal)
 EXPR_WS  :   [ \t]+ -> skip ; // toss out whitespace
 EXPR_OPEN_PAR : '(';
 EXPR_CLOSE_PAR : ')';
 
+EXPR_BLOCK_COMMENT : '/*' .*? '*/' -> skip;
+EXPR_LINE_COMMENT : '//' .*? '\n' -> skip;
+
+
 mode QUASIQUOTE;
+QUASIQUOTE_CSV : 'CSV' -> mode(CSV);
 QUASIQUOTE_SQL : 'SQL' -> mode(SQLITE);
 QUASIQUOTE_WS  :   [ \t]+ -> skip ; // toss out whitespace
+
+mode CSV;
+
+CSV_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
+
+CSV_COMMA : ',';
+CSV_NEWLINE : '\r'? '\n';
+CSV_TEXT   : ~[,\n\r"]+ ;
+CSV_STRING : '"' ('""'|~'"')* '"' ; // quote-quote is an escaped quote
+CSV_WS  :   [ \t]+ -> skip ; // toss out whitespace
 
 mode SQLITE;
 
@@ -47,7 +62,7 @@ SCOL: ';';
 DOT: '.';
 SQL_OPEN_PAR: '(';
 SQL_CLOSE_PAR: ')';
-COMMA: ',';
+SQL_COMMA: ',';
 SQL_ASSIGN: '=';
 SQL_STAR: '*';
 SQL_PLUS: '+';

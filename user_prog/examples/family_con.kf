@@ -1,0 +1,84 @@
+
+// Adapted from:
+// https://www.informatik.uni-kiel.de/~curry/examples/family_con.curry
+
+/* Structure of the family:
+
+                    Christine --- Antony  Maria --- Bill
+                      /    \              |
+                     /      \             |
+       Monica --- John       Alice --- Frank
+        /  \                   |
+       /    \                  |
+    Susan  Peter             Andrew
+*/
+
+create_tables = {| SQL
+	CREATE TABLE IF NOT EXISTS persons (
+		name TEXT PRIMARY KEY, gender TEXT
+	);
+	CREATE TABLE IF NOT EXISTS marriages (
+		name TEXT PRIMARY KEY, spouse TEXT
+	);
+	CREATE TABLE IF NOT EXISTS mothers (
+		mother TEXT, child TEXT
+	);
+|}
+
+persons_inserter = {| SQL
+	INSERT INTO persons (name, gender)
+	VALUES (@name, @gender)
+	ON CONFLICT(name) DO
+	UPDATE SET gender=@gender
+|}
+
+marriages_inserter = {| SQL
+	INSERT INTO marriages (name, spouse)
+	VALUES (@name, @spouse)
+	ON CONFLICT(name) DO
+	UPDATE SET spouse=@spouse
+|}
+
+mothers_inserter = {| SQL
+	INSERT INTO mothers (mother, child)
+	SELECT @mother, @child
+	WHERE NOT EXISTS(
+		SELECT 1 FROM mothers
+		WHERE mother=@mother AND child=@child
+	)
+|}
+
+// Note:  the interpretation of the columns in the CSV is itself a mapping;
+// not only which column is what heading, but even whether e.g. "female" is a string or enum.
+persons_data = {| CSV
+	Christine, female
+	Maria, female
+	Monica, female
+	Alice, female
+	Susan, female
+	Antony, male
+	Bill, male
+	John, male
+	Frank, male
+	Peter, male
+	Andrew, male
+|}
+
+marriages_data = {| CSV
+	Christine, Antony
+	Maria, Bill
+	Monica, John
+	Alice, Frank
+|}
+
+mothers_data = {| CSV
+	Christine, John
+	Christine, Alice
+	Maria, Frank
+	Monica, Susan
+	Monica, Peter
+	Alice, Andrew
+|}
+
+
+
