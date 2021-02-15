@@ -13,6 +13,60 @@
     Susan  Peter             Andrew
 */
 
+database_template = {| STG
+    database() ::= <<
+    CREATE TABLE IF NOT EXISTS foo (
+        column1 INTEGER PRIMARY KEY,
+        column2 TEXT
+    );
+    INSERT INTO foo (column1, column2) VALUES (1, "a")
+        ON CONFLICT(column1) DO
+    UPDATE SET column2="aa";
+    INSERT INTO foo (column1, column2) VALUES (2, "b")
+        ON CONFLICT(column1) DO
+    UPDATE SET column2="bb";
+    >>
+|}
+
+header_template = {| STG
+    header(vars, className) ::= <<
+    // Generated Header
+
+    class $className$
+    {
+    private:
+        $vars:decl_var();separator="\n"$
+
+    public:
+        int run();
+    };
+    >>
+
+    decl_var(v) ::= <<int $v$ = 0;>>
+|}
+
+source_template = {| STG
+    source(statements, className) ::= <<
+    // Generated Source
+
+    #include "$className$.hpp"
+
+    #include <iostream>
+
+    int $className$::run()
+    {
+        $statements:select_statement();separator="\n"$
+    }
+
+    >>
+
+    select_statement(s) ::= <<$(s.template)(s.args)$;>>
+
+    print_statement(args) ::= <<std::cout << "$args.var$=" << $args.var$ << "\\n">>
+    assign_statement(args) ::= <<$args.assignee$ = $args.expr$>>
+    return_statement(args) ::= <<return $args.value$>>
+|}
+
 create_tables = {| SQL
 	CREATE TABLE IF NOT EXISTS persons (
 		name TEXT PRIMARY KEY, gender TEXT

@@ -18,7 +18,7 @@ set(transpile_output_stg ${transpile_base_name}.stg)
 set(transpile_outputs ${transpile_output_json} ${transpile_output_stg})
 add_custom_command(
         COMMAND transpiler -o ${transpile_base_name} -i ${CMAKE_CURRENT_SOURCE_DIR} ${transpile_inputs}
-        DEPENDS ${transpile_inputs}
+        DEPENDS transpiler ${transpile_inputs}
         OUTPUT ${transpile_outputs}
         COMMENT "Running transpiler to generate JSON data for templates."
 )

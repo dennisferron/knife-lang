@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     {
         std::cout << argv[i] << " ";
     }
-    std::cout << "\n";
+    std::cout << std::endl;
 
     std::string output_base_name = "";
     std::string input_folder = "";
