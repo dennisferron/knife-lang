@@ -47,9 +47,7 @@ expr2:
 quasiquote:
 	   QUASIQUOTE_SQL sql_stmt_list SQL_CLOSE_QUASIQUOTE #quasiQuoteSql
 	|  QUASIQUOTE_CSV csv_row_list CSV_CLOSE_QUASIQUOTE #quasiQuoteCsv
-	|  QUASIQUOTE_STG stg_text STG_CLOSE_QUASIQUOTE #quasiQuoteStg;
-
-stg_text: STG_TEXT;
+    ;
 
 csv_row_list: csv_row+;
 csv_row: csv_field (CSV_COMMA csv_field)* CSV_NEWLINE;

@@ -1,0 +1,15 @@
+
+header(vars, className) ::= <<
+// Generated Header 
+
+class $className$
+{
+private:
+	$vars:decl_var();separator="\n"$
+	
+public:
+	int run();
+};
+>>
+
+decl_var(v) ::= <<int $v$ = 0;>>

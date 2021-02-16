@@ -21,6 +21,79 @@ class CerrErrorListener : public antlr4::BaseErrorListener
     }
 };
 
+void output_header(std::string output_base_name)
+{
+    std::string output_json_file = output_base_name + "_header.json";
+    std::ofstream ofs(output_json_file);
+
+    ofs << "{\n";
+    ofs << R"( "className":")" << output_base_name << R"(", )";
+    ofs << R"(
+	"vars":[
+		"b",
+		"x"
+	],
+
+	"statements":[
+		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
+		{ "template":"print_statement", "args":{"var":"x"}},
+		{ "template":"return_statement", "args":{"value":42}}
+	]
+})";
+    ofs << "}";
+
+    ofs.close();
+}
+
+void output_source(std::string output_base_name)
+{
+    std::string output_json_file = output_base_name + "_source.json";
+    std::ofstream ofs(output_json_file);
+
+    ofs << "{\n";
+    ofs << R"( "className":")" << output_base_name << R"(", )";
+    ofs << R"(
+	"vars":[
+		"b",
+		"x"
+	],
+
+	"statements":[
+		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
+		{ "template":"print_statement", "args":{"var":"x"}},
+		{ "template":"return_statement", "args":{"value":42}}
+	]
+})";
+    ofs << "}";
+
+    ofs.close();
+}
+
+void output_db_init(std::string output_base_name)
+{
+    std::string output_json_file = output_base_name + "_db_init.json";
+    std::ofstream ofs(output_json_file);
+
+    ofs << "{\n";
+
+    //ofs << R"( "className":")" << output_base_name << R"(", )";
+    ofs << R"(
+	"vars":[
+		"b",
+		"x"
+	],
+
+	"statements":[
+		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
+		{ "template":"print_statement", "args":{"var":"x"}},
+		{ "template":"return_statement", "args":{"value":42}}
+	]
+})";
+    ofs << "}";
+
+    ofs.close();
+}
+
 enum class ArgMode
 {
     Default,
@@ -33,7 +106,7 @@ int main(int argc, char* argv[])
     std::cout << "Command line:\n";
     for (int i=0; i<argc; i++)
     {
-        std::cout << argv[i] << " ";
+        std::cout << "<" << argv[i] << "> ";
     }
     std::cout << std::endl;
 
@@ -66,27 +139,25 @@ int main(int argc, char* argv[])
                     return -1;
                 }
                 else
-                    input_files.push_back(arg_str);
+                {
+                    std::string full_path = input_folder + "/" + arg_str;
+                    input_files.push_back(full_path);
+                }
         }
     }
 
     if (output_base_name == "" ||
-        input_folder == "" ||
         input_files.empty())
     {
         std::cerr << "Usage: " << argv[0]
                   << " -o <output base name>"
+                  << "[-i input file path]"
                   << " <one or more input files>\n";
         return -1;
     }
 
-    std::string output_json_file = output_base_name + ".json";
-    std::string output_stg_file = output_base_name + ".stg";
-
-    for (std::string input_file : input_files)
+    for (std::string expr_file : input_files)
     {
-        std::string expr_file = input_folder + "\\" + input_file;
-
         antlr4::ANTLRFileStream expr_strm(expr_file);
 
         if (expr_strm.size() == 0)
@@ -119,81 +190,10 @@ int main(int argc, char* argv[])
         walker.walk(&listener, expr_tree); // initiate walk of tree with listener
     }
 
-    // "Generate" code
-    std::ofstream ofs(output_json_file);
-
-    std::string data = R"(
-{
-	"className":"prog",
-
-	"vars":[
-		"b",
-		"x"
-	],
-
-	"statements":[
-		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
-		{ "template":"print_statement", "args":{"var":"x"}},
-		{ "template":"return_statement", "args":{"value":42}}
-	]
-})";
-    ofs << data;
-    ofs.close();
-
-    std::string stg_data = R"(
-database() ::= <<
-CREATE TABLE IF NOT EXISTS foo (
-    column1 INTEGER PRIMARY KEY,
-    column2 TEXT
-);
-INSERT INTO foo (column1, column2) VALUES (1, "a")
-    ON CONFLICT(column1) DO
-UPDATE SET column2="aa";
-INSERT INTO foo (column1, column2) VALUES (2, "b")
-    ON CONFLICT(column1) DO
-UPDATE SET column2="bb";
->>
-
-header(vars, className) ::= <<
-// Generated Header
-
-class $className$
-{
-private:
-	$vars:decl_var();separator="\n"$
-
-public:
-	int run();
-};
->>
-
-
-decl_var(v) ::= <<int $v$ = 0;>>
-
-source(statements, className) ::= <<
-// Generated Source
-
-#include "$className$.hpp"
-
-#include <iostream>
-
-int $className$::run()
-{
-	$statements:select_statement();separator="\n"$
-}
-
->>
-
-select_statement(s) ::= <<$(s.template)(s.args)$;>>
-
-print_statement(args) ::= <<std::cout << "$args.var$=" << $args.var$ << "\\n">>
-assign_statement(args) ::= <<$args.assignee$ = $args.expr$>>
-return_statement(args) ::= <<return $args.value$>>
-    )";
-
-    std::ofstream ofs_stg(output_stg_file);
-    ofs_stg << stg_data;
-    ofs_stg.close();
+    output_header(output_base_name);
+    output_source(output_base_name);
+    output_db_init(output_base_name);
 
     return 0;
 }
+

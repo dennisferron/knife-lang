@@ -31,10 +31,3 @@ void ParseListener::enterQuasiQuoteCsv(ExprParser::QuasiQuoteCsvContext* ctx)
               << text << "\n";
 }
 
-void ParseListener::enterQuasiQuoteStg(ExprParser::QuasiQuoteStgContext* ctx)
-{
-    auto tokens = parser->getTokenStream();
-    std::string text = tokens->getText(ctx->stg_text());
-    std::cout << "STG text: "
-              << text << "\n";
-}

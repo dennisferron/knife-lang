@@ -13,7 +13,6 @@ public:
 
     void enterQuasiQuoteSql(ExprParser::QuasiQuoteSqlContext* ctx) override;
     void enterQuasiQuoteCsv(ExprParser::QuasiQuoteCsvContext* ctx) override;
-    void enterQuasiQuoteStg(ExprParser::QuasiQuoteStgContext *ctx) override;
 };
 
 

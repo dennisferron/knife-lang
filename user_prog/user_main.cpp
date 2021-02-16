@@ -1,8 +1,8 @@
-#include "prog.hpp"
+#include "user_prog.hpp"
 
 int main()
 {
-    prog p;
+    user_prog p;
     return p.run();
 }
 

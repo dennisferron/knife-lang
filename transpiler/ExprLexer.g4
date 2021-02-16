@@ -41,14 +41,9 @@ EXPR_LINE_COMMENT : '//' .*? '\n' -> skip;
 
 
 mode QUASIQUOTE;
-QUASIQUOTE_STG : 'STG' -> mode(STG);
 QUASIQUOTE_CSV : 'CSV' -> mode(CSV);
 QUASIQUOTE_SQL : 'SQL' -> mode(SQLITE);
 QUASIQUOTE_WS  :   [ \t]+ -> skip ; // toss out whitespace
-
-mode STG;
-STG_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
-STG_TEXT : .+?;
 
 mode CSV;
 
