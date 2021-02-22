@@ -17,13 +17,21 @@ set(transpile_inputs examples/family_con.kf)
 set(stst_templates_dir ${CMAKE_SOURCE_DIR}/templates)
 set(sqlite_output_db ${transpile_base_name}.db)
 
-add_executable(user_prog
-        user_main.cpp
+add_library(user_lib SHARED
         user_prog.cpp
-        user_prog.hpp)
+        user_prog.hpp
+        user_lib.cpp user_lib.hpp)
 
+include(GenerateExportHeader)
+generate_export_header( user_lib )
+target_include_directories(user_lib PUBLIC
+        ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(user_prog
+        user_main.cpp )
 target_include_directories(user_prog PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(user_prog user_lib)
 
 add_custom_command(
     COMMAND transpiler
@@ -81,13 +89,10 @@ add_custom_command(
         COMMENT "Running Sqlite3 to generate database file (db)."
 )
 
-# TODO:  What we might want to do is create a custom target (replacing
-# this one) that depends upon both the database and the executable.
-# that way we don't make either wait for the other to start building
-# but still ensure that both are built before the user runs the program.
-# Perhaps it should/could be a thin wrapper executable.
 add_custom_target(
         prog_db ALL
-        COMMENT "Dummy target to cause db to be generated."
+        COMMENT "Generating initial program database..."
         DEPENDS ${sqlite_output_db}
 )
+
+ADD_DEPENDENCIES(user_prog prog_db)

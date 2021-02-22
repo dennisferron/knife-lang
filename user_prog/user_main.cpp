@@ -1,9 +1,9 @@
-#include "user_prog.hpp"
+#include "user_lib.hpp"
 
 int main()
 {
-    user_prog p;
-    return p.run();
+    run_user_lib();
+    return 0;
 }
 
 /*
