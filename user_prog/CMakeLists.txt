@@ -20,7 +20,15 @@ set(sqlite_output_db ${transpile_base_name}.db)
 add_library(user_lib SHARED
         user_prog.cpp
         user_prog.hpp
-        user_lib.cpp user_lib.hpp)
+        user_lib.cpp
+        user_lib.hpp
+        ExampleRelation.cpp
+        ExampleRelation.hpp
+        ExampleRelation2.cpp
+        ExampleRelation2.hpp
+        Environment.cpp
+        Environment.hpp
+        )
 
 include(GenerateExportHeader)
 generate_export_header( user_lib )
