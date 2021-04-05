@@ -5,27 +5,56 @@ Parent::Parent(lvar<Person> p, lvar<Person> c)
 {
 }
 
-bool Parent::step(Environment const& env, int& var_counter)
+bool Parent::bind(Environment& env)
+{
+    auto e_p = env.lookup(p);
+    auto e_c = env.lookup(c);
+
+    bool compat  = (!e_p || *e_p == cached_result.p)
+                && (!e_c || *e_c == cached_result.c);
+
+    if (compat)
+        env.add(this);
+
+    return compat;
+}
+
+void const* Parent::lookup(int v) const
+{
+    if (v == p.index)
+        return &cached_result.p;
+    else if (v == c.index)
+        return &cached_result.c;
+    else
+        return nullptr;
+}
+
+bool Parent::step(Environment& env, int& var_counter)
 {
     switch (next_step)
     {
         case 0:
             next_step = 1;
-            // Result { "alice", "bob" };
-            return true;
+            cached_result = Result { "alice", "bob" };
+            if (bind(env))
+                return true;
         case 1:
             next_step = 2;
-            // Result { "bob", "chris" };
-            return true;
+            cached_result =  Result { "bob", "chris" };
+            if (bind(env))
+                return true;
         case 2:
             next_step = 3;
-            // Result { "chris", "debbie" };
-            return true;
+            cached_result =  Result { "chris", "debbie" };
+            if (bind(env))
+                return true;
         case 3:
             next_step = 4;
-            // Result { "debbie", "edith" };
-            return true;
+            cached_result =  Result { "debbie", "edith" };
+            if (bind(env))
+                return true;
         default:
+            env.remove(this);
             next_step = -1;
             return false;
     }
@@ -55,7 +84,7 @@ void Ancestor::reset()
         ancestor_1->reset();
 }
 
-bool Ancestor::step(Environment const& env, int& var_counter)
+bool Ancestor::step(Environment& env, int& var_counter)
 {
     switch (next_step)
     {

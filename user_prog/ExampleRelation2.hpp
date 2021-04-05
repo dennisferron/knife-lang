@@ -11,20 +11,35 @@
 struct Person
 {
     std::string name;
+
+    bool operator ==(Person const& y) const
+    {
+        return this->name == y.name;
+    }
 };
 
-class Parent
+class Parent : public Binding
 {
 private:
     int next_step = 0;
     lvar<Person> p;
     lvar<Person> c;
 
+    struct Result
+    {
+        Person p;
+        Person c;
+    } cached_result;
+
+    bool bind(Environment& env);
+
 public:
     Parent(lvar<Person> p, lvar<Person> c);
     void reset() { next_step = 0; }
 
-    bool step(Environment const& env, int& var_counter);
+    bool step(Environment& env, int& var_counter);
+
+    void const* lookup(int v) const override;
 };
 
 /*
@@ -53,5 +68,5 @@ public:
 
     void reset();
 
-    bool step(Environment const& env, int& var_counter);
+    bool step(Environment& env, int& var_counter);
 };

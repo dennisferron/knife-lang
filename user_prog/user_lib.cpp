@@ -23,5 +23,10 @@ USER_LIB_EXPORT void run_user_lib()
     Ancestor anc(ans, des);
 
     while (anc.step(env, var_counter))
-        std::cout << "Step\n";
+    {
+        Person const* e_ans = env.lookup(ans);
+        Person const* e_des = env.lookup(des);
+        std::cout << "Ancestor(" << e_ans->name
+            << ", " << e_des->name << ")\n";
+    }
 }
