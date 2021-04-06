@@ -97,6 +97,8 @@ bool Ancestor::step(Environment& env, int& var_counter)
             else
                 next_step = 2;
         case 2:
+            delete parent_0;
+            parent_0 = nullptr;
             x = { ++var_counter, "x" };
             parent_1 = new Parent(x, des);
             ancestor_1 = new Ancestor(ans, x);
