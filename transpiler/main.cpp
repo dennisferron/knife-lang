@@ -30,8 +30,8 @@ void output_header(std::string output_base_name)
     ofs << R"( "className":")" << output_base_name << R"(", )";
     ofs << R"(
 	"vars":[
-		"b",
-		"x"
+		"p",
+		"c"
 	],
 
 	"statements":[
@@ -54,8 +54,8 @@ void output_source(std::string output_base_name)
     ofs << R"( "className":")" << output_base_name << R"(", )";
     ofs << R"(
 	"vars":[
-		"b",
-		"x"
+		"p",
+		"c"
 	],
 
 	"statements":[

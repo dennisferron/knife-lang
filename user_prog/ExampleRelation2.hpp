@@ -2,26 +2,13 @@
 
 #include "Environment.hpp"
 
+#include "DataTypes.hpp"
+
 #include <variant>
 #include <string>
 #include <iostream>
 #include <cassert>
 #include <vector>
-
-struct Person
-{
-    std::string name;
-
-    bool operator ==(Person const& y) const
-    {
-        return this->name == y.name;
-    }
-
-    friend std::ostream& operator <<(std::ostream& os, Person const& x)
-    {
-        return os << x.name;
-    }
-};
 
 class Parent : public Binding
 {
@@ -36,12 +23,7 @@ private:
         Person c;
     } cached_result;
 
-    friend std::ostream& operator <<(std::ostream& os, Parent const& x)
-    {
-        return os << "Parent("
-            << x.cached_result.p << ","
-            << x.cached_result.c << ")";
-    }
+    std::ostream& print(std::ostream& os, int nesting);
 
     friend class Ancestor;
 
@@ -49,7 +31,7 @@ private:
 
 public:
     Parent(lvar<Person> p, lvar<Person> c);
-    void reset() { next_step = 0; }
+    void reset();
 
     bool step(Environment& env, int& var_counter);
 
@@ -96,7 +78,7 @@ private:
             return nullptr;
     }
 
-    std::ostream& write_head(std::ostream& os) const
+    std::ostream& print_head(std::ostream& os) const
     {
         auto* arg0 = get_ans();
         auto* arg1 = get_des();
@@ -120,14 +102,6 @@ private:
         return os;
     }
 
-    std::ostream& write_tabs(std::ostream& os, int tabs)
-    {
-        for (int i=0; i<tabs; i++)
-            os << "   ";
-
-        return os;
-    }
-
 public:
     Ancestor(lvar<Person> ans, lvar<Person> des);
     ~Ancestor();
@@ -136,28 +110,25 @@ public:
 
     bool step(Environment& env, int& var_counter);
 
-    std::ostream& write(std::ostream& os, int nesting)
+    std::ostream& print(std::ostream& os, int nesting)
     {
-        write_tabs(os, nesting);
-        write_head(os);
-        os << "\n";
-        write_tabs(os, nesting);
-        os << "{\n";
-        write_tabs(os, nesting+1);
+        print_tabs(os, nesting);
+        print_head(os) << " = {\n";
 
         if (parent_0)
-            os << *parent_0;
+            parent_0->print(os, nesting+1) << "\n";
         else if (parent_1 && ancestor_1)
         {
-            os << *parent_1 << ";\n";
-            ancestor_1->write(os, nesting + 1);
+            parent_1->print(os, nesting+1) << " &\n";
+            ancestor_1->print(os, nesting + 1) << "\n";
         }
         else
-            os << "???";
+        {
+            print_tabs(os, nesting+1)
+               << "???\n";
+        }
 
-        os << "\n";
-        write_tabs(os, nesting);
-        os << "}";
+        print_tabs(os, nesting) << "}";
 
         return os;
     }

@@ -1,9 +1,11 @@
 {
+	"Note:":"!!!! This json file is not used by the transpiler !!!!",
+
 	"className":"prog",
 
 	"vars":[
-		"b",
-		"x"
+		"p",
+		"c"
 	],
 
 	"statements":[

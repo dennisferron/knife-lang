@@ -1,8 +1,20 @@
 #include "ExampleRelation2.hpp"
 
+std::ostream& Parent::print(std::ostream& os, int nesting)
+{
+    return print_tabs(os, nesting) << "Parent("
+              << cached_result.p << ","
+              << cached_result.c << ")";
+}
+
 Parent::Parent(lvar<Person> p, lvar<Person> c)
     : p(p), c(c)
 {
+}
+
+void Parent::reset()
+{
+    next_step = 0;
 }
 
 bool Parent::bind(Environment& env)

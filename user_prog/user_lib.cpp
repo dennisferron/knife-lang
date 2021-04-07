@@ -28,7 +28,7 @@ USER_LIB_EXPORT void run_user_lib()
         Person const* e_des = env.lookup(des);
         std::cout << "Ancestor(" << e_ans->name
             << ", " << e_des->name << ") because:\n\n";
-        anc.write(std::cout, 0);
+        anc.print(std::cout, 0);
         std::cout << "\n\n";
     }
 }

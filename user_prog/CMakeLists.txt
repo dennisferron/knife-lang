@@ -26,14 +26,13 @@ add_library(user_lib SHARED
         ExampleRelation.hpp
         ExampleRelation2.cpp
         ExampleRelation2.hpp
-        Environment.cpp
-        Environment.hpp
         )
 
 include(GenerateExportHeader)
 generate_export_header( user_lib )
 target_include_directories(user_lib PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(user_lib PUBLIC basekit)
 
 add_executable(user_prog
         user_main.cpp )

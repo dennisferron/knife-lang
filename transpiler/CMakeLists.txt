@@ -39,3 +39,4 @@ target_include_directories(transpiler
 set(extra_static_compile_flags "-DUSE_UTF8_INSTEAD_OF_CODECVT -DANTLR4CPP_STATIC")
 
 set_target_properties(transpiler PROPERTIES COMPILE_FLAGS ${extra_static_compile_flags})
+

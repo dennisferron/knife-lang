@@ -1,13 +1,21 @@
 
-source(statements, className) ::= <<
+source(statements, className, vars) ::= <<
 // Generated Source
 
 #include "$className$.hpp"
 
 #include <iostream>
 
+std::ostream& $className$::print(std::ostream& os, int nesting)
+{
+    return print_tabs(os, nesting) << "$className$("
+        $vars:print_res_var();separator=" << \",\"\n"$ << ")";
+}
+
 int $className$::run()
 {
+    int x = 1;
+    int b = 2;
 	$statements:select_statement();separator="\n"$
 }
 
@@ -18,3 +26,5 @@ select_statement(s) ::= <<$(s.template)(s.args)$;>>
 print_statement(args) ::= <<std::cout << "$args.var$=" << $args.var$ << "\\n">>
 assign_statement(args) ::= <<$args.assignee$ = $args.expr$>>
 return_statement(args) ::= <<return $args.value$>>
+
+print_res_var(v) ::= << << cached_result.$v$>>

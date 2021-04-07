@@ -2,14 +2,41 @@
 header(vars, className) ::= <<
 // Generated Header 
 
-class $className$
+#include "Environment.hpp"
+#include "DataTypes.hpp"
+
+class $className$ : public Binding
 {
 private:
-	$vars:decl_var();separator="\n"$
-	
+    int next_step = 0;
+	$vars:decl_lvar();separator="\n"$
+
+    struct Result
+    {
+	    $vars:decl_res_var();separator="\n"$
+    } cached_result;
+
+    std::ostream& print(std::ostream& os, int nesting);
+
+    friend class Ancestor;
+
+    bool bind(Environment& env);
+
 public:
-	int run();
+    $className$($vars:parm_lvar();separator=", "$);
+    void reset();
+
+    bool step(Environment& env, int& var_counter);
+
+    void const* lookup(int v) const override;
+
+    // TODO: Following is dummy function, remove:
+    int run();
 };
+
 >>
 
-decl_var(v) ::= <<int $v$ = 0;>>
+decl_lvar(v) ::= <<lvar<Person> $v$;>>
+decl_res_var(v) ::= <<Person $v$;>>
+
+parm_lvar(v) ::= <<lvar<Person> $v$>>
