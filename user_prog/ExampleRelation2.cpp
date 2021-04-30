@@ -19,26 +19,15 @@ void Parent::reset()
 
 bool Parent::bind(Environment& env)
 {
-    auto e_p = env.lookup(p);
-    auto e_c = env.lookup(c);
+    checkpoint = env.save_checkpoint();
 
-    bool compat  = (!e_p || *e_p == cached_result.p)
-                && (!e_c || *e_c == cached_result.c);
+    bool success = env.eq(p, &cached_result.p)
+            && env.eq(c, &cached_result.c);
 
-    if (compat)
-        env.add(this);
+    if (!success)
+        env.revert_to_checkpoint(checkpoint);
 
-    return compat;
-}
-
-void const* Parent::lookup(int v) const
-{
-    if (v == p.index)
-        return &cached_result.p;
-    else if (v == c.index)
-        return &cached_result.c;
-    else
-        return nullptr;
+    return success;
 }
 
 bool Parent::step(Environment& env, int& var_counter)
@@ -66,7 +55,7 @@ bool Parent::step(Environment& env, int& var_counter)
             if (bind(env))
                 return true;
         default:
-            env.remove(this);
+            env.revert_to_checkpoint(checkpoint);
             next_step = -1;
             return false;
     }

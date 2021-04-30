@@ -10,10 +10,12 @@
 #include <cassert>
 #include <vector>
 
-class Parent : public Binding
+class Parent
 {
 private:
     int next_step = 0;
+    std::size_t checkpoint = 0;
+
     lvar<Person> p;
     lvar<Person> c;
 
@@ -34,8 +36,6 @@ public:
     void reset();
 
     bool step(Environment& env, int& var_counter);
-
-    void const* lookup(int v) const override;
 };
 
 /*
@@ -47,6 +47,7 @@ class Ancestor
 {
 private:
     int next_step = 0;
+
     lvar<Person> ans;
     lvar<Person> des;
     lvar<Person> x = {};

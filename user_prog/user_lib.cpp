@@ -24,10 +24,11 @@ USER_LIB_EXPORT void run_user_lib()
 
     while (anc.step(env, var_counter))
     {
-        Person const* e_ans = env.lookup(ans);
-        Person const* e_des = env.lookup(des);
-        std::cout << "Ancestor(" << e_ans->name
-            << ", " << e_des->name << ") because:\n\n";
+        auto e_ans = env.lookup(ans);
+        auto e_des = env.lookup(des);
+
+        std::cout << "Ancestor(" << **e_ans
+            << ", " << **e_des << ") because:\n\n";
         anc.print(std::cout, 0);
         std::cout << "\n\n";
     }
