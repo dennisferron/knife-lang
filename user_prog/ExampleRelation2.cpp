@@ -32,6 +32,10 @@ bool Parent::bind(Environment& env)
 
 bool Parent::step(Environment& env, int& var_counter)
 {
+    // Must remove previous bindings before we can bind new.
+    if (next_step > 0)
+        env.revert_to_checkpoint(checkpoint);
+
     switch (next_step)
     {
         case 0:
@@ -87,6 +91,10 @@ void Ancestor::reset()
 
 bool Ancestor::step(Environment& env, int& var_counter)
 {
+    std::cout << "Ancestor::step(), previous:\n";
+    print(std::cout, 0);
+    std::cout << std::endl;
+
     switch (next_step)
     {
         case 0:

@@ -7,6 +7,8 @@
 #include <ostream>
 #include <sstream>
 #include <map>
+#include <iostream>
+#include <memory>
 
 template <typename T>
 struct lvar
@@ -36,44 +38,6 @@ bool operator ==(lvar<T> const& x, lvar<T> const& y)
     return x.index == y.index;
 }
 
-/*
-
-Suppose the first value of the var is rel1.A = struct { X, 2 }
-and the next value of the var is rel2.A = struct { 1, Y },
-then to represent the unification of them we need a relation to
-point to to get "X" and to get "Y".  We could let the relations
-recursively return variables from their subterms, however what
-if rel1 doesn't KNOW the "2" should be associated with "Y" and
-rel2 doesn't KNOW the "1" should be associated with "X" (because
-they each don't know the opposite's variables and the values 1
- or 2 are storage locations and only associated with vars positionally.)
-
-The struct { _, _ } should overload unify for its particular type.
-The value for vars X, Y should be able to point *into* the struct
- to address the values 1, 2.
-So the struct { _, _ } should also implement positional access.
- The result of unify'ing the struct would be a list of subst'itutions
- with var(X)->&val(1), var(Y)->&val(2).
-But we also need a way to tie these subst's to the current state, so
- that when rel2 is deleted (or reset), the subst's for X and Y go away.
-
- To recap, if either rel1's or rel2's A had been unbound, the first extension
- of the environment would have been to bind A to { X, 2 } or { 1, Y }
-But since it was already bound, the subst's X->1 and Y->2 must be added
- to the environment so that they will be equal.
-Later if the value of A is looked up, this subst must be applied to generate
- the result.  (This can easily be handled in unify, but should also be
- done when the user looks up a result.)
-We need to associate a pointer to rel2 with the subst's of X and Y,
- so that when rel2 resets or clears, the environment can remove them.
-This means a pointer to the "owning relation" or "asking relation"
- or "most recent relation" must be associated with the list of Subst's
- returned from unify.  (It only need be passed to unify if that pointer
- is part of class Subst.  It could instead be associated with the entire
- list of substitutions by environment after the list is computed.)
-
- */
-
 using Term = std::variant<void const*, int>;
 
 
@@ -102,10 +66,28 @@ bool occurs(int v, T const* x)
     return false;
 }
 
+struct ValuePrinterBase
+{
+    virtual std::ostream& print(std::ostream& os, void const* p) const = 0;
+};
+
+template <typename T>
+struct ValuePrinter : ValuePrinterBase
+{
+    std::ostream& print(std::ostream& os, void const* p) const override
+    {
+        if (p == nullptr)
+            return os << "null";
+        else
+            return os << p << " " << *static_cast<T const*>(p);
+    }
+};
+
 class Environment
 {
 private:
     std::vector<Binding> bindings;
+    std::map<int, std::unique_ptr<ValuePrinterBase>> printers;
 
     Term walk(Term const& v) const
     {
@@ -148,7 +130,10 @@ private:
                 return false;
             else
             {
+                std::cout << " add binding {" << u << ","
+                    << v << " " << *static_cast<T const*>(v) << "}\n";
                 env.bindings.push_back({u, v});
+                env.printers[u] = std::make_unique<ValuePrinter<T>>();
                 return true;
             }
         }
@@ -166,31 +151,26 @@ private:
             {
                 auto chkpt = env.save_checkpoint();
 
-                T const* u_ = reinterpret_cast<T const*>(u);
-                T const* v_ = reinterpret_cast<T const*>(v);
+                T const* u_ = static_cast<T const*>(u);
+                T const* v_ = static_cast<T const*>(v);
+
+                std::cout << "unify_value(" << u << " " << *u_ << ", "
+                    << v << " " << *v_ << ") == ";
 
                 if (unify_value(u_, v_, env))
+                {
+                    std::cout << "success\n";
                     return true;
+                }
                 else
                 {
+                    std::cout << "failure\n";
                     env.revert_to_checkpoint(chkpt);
                     return false;
                 }
             }
         }
     };
-
-public:
-
-    template <typename T>
-    std::optional<T const*> lookup(lvar<T> var) const
-    {
-        Term t = walk(var.index);
-        if (auto p = std::get_if<void const*>(&t))
-            return reinterpret_cast<T const*>(p);
-        else
-            return std::nullopt;
-    }
 
     template <typename T>
     bool unify(Term const& u, Term const& v)
@@ -202,10 +182,87 @@ public:
         return std::visit(visitor, u_, v_);
     }
 
+    std::ostream& print(std::ostream& os, std::optional<std::size_t> cursor = std::nullopt) const
+    {
+        for (std::size_t i=0; i<bindings.size(); i++)
+        {
+            if (i == cursor)
+                os << "(<-- here) ";
+
+            auto const& b = bindings[i];
+
+            os << "{" << b.from << ",";
+
+            if (auto p = std::get_if<void const*>(&b.to))
+            {
+                // debugging
+                auto x = lookup(b.from);
+                if (!x)
+                    throw std::logic_error("var not found or not a value");
+                else
+                {
+                    auto p2 = *x;
+                    if (p2 != *p)
+                        throw std::logic_error("ptr to val does not match");
+                }
+
+                printers.at(b.from)->print(os, *p);
+            }
+            else  // b.to is a var
+                os << std::get<int>(b.to);
+            os << "} ";
+        }
+        return os;
+    }
+
+public:
+
+    friend std::ostream& operator <<(std::ostream& os, Environment const& env)
+    {
+        return env.print(os);
+    }
+
+    template <typename T>
+    std::optional<T const*> lookup(lvar<T> var) const
+    {
+        Term t = walk(var.index);
+        if (auto p = std::get_if<void const*>(&t))
+            return static_cast<T const*>(*p);
+        else
+            return std::nullopt;
+    }
+
+    std::optional<void const*> lookup(int var) const
+    {
+        Term t = walk(var);
+        if (auto p = std::get_if<void const*>(&t))
+            return *p;
+        else
+            return std::nullopt;
+    }
+
+    template <typename T>
+    bool eq(lvar<T> var1, lvar<T> var2)
+    {
+        return unify<T>(var1.index, var2.index);
+    }
+
     template <typename T>
     bool eq(lvar<T> var, T const* val)
     {
         return unify<T>(var.index, val);
+    }
+
+    template <typename T>
+    bool eq(T const* val, lvar<T> var)
+    {
+        return unify<T>(var.index, val);
+    }
+
+    template <typename T>
+    bool eq(T const* val1, T const* val2)
+    {
+        return unify<T>(val1, val2);
     }
 
     template <typename T>
@@ -222,11 +279,18 @@ public:
 
     std::size_t save_checkpoint() const
     {
+        std::cout << "save_checkpoint() == " << bindings.size()
+            << " Environment: " << *this << "\n";
         return bindings.size();
     }
 
     void revert_to_checkpoint(std::size_t pos)
     {
+        std::cout << "revert_to_checkpoint(" << bindings.size() << ") "
+           << " Environment: ";
+        print(std::cout, pos);
+        std::cout << "\n";
+
         if (pos > bindings.size())
             throw std::out_of_range("Bindings is already shorter than checkpoint.");
 

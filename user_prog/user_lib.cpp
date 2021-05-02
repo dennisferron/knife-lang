@@ -27,9 +27,13 @@ USER_LIB_EXPORT void run_user_lib()
         auto e_ans = env.lookup(ans);
         auto e_des = env.lookup(des);
 
-        std::cout << "Ancestor(" << **e_ans
-            << ", " << **e_des << ") because:\n\n";
+        std::cout << "Ancestor("
+            << ans << " " << (void const*)*e_ans << " " << **e_ans
+            << ", "
+            << des << " " << (void const*)*e_des << " " << **e_des
+            << ") because:\n\n";
         anc.print(std::cout, 0);
+        std::cout << "\nEnvironment (post): " << env << "\n";
         std::cout << "\n\n";
     }
 }

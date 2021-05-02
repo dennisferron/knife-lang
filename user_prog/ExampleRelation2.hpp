@@ -33,6 +33,7 @@ private:
 
 public:
     Parent(lvar<Person> p, lvar<Person> c);
+
     void reset();
 
     bool step(Environment& env, int& var_counter);
