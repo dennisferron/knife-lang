@@ -66,20 +66,84 @@ bool occurs(int v, T const* x)
     return false;
 }
 
-struct ValuePrinterBase
+struct BindingInfoBase
 {
-    virtual std::ostream& print(std::ostream& os, void const* p) const = 0;
+    virtual std::ostream& print(std::ostream& os) const = 0;
 };
 
 template <typename T>
-struct ValuePrinter : ValuePrinterBase
+struct ValueBinding : BindingInfoBase
 {
-    std::ostream& print(std::ostream& os, void const* p) const override
+    T const* value;
+
+    ValueBinding(T const* value) : value(value) {}
+
+    std::ostream& print(std::ostream& os) const override
     {
-        if (p == nullptr)
+        if (value == nullptr)
             return os << "null";
         else
-            return os << p << " " << *static_cast<T const*>(p);
+            return os << value << " " << *static_cast<T const*>(value);
+    }
+};
+
+struct VariableBinding : BindingInfoBase
+{
+    int index;
+
+    VariableBinding(int index) : index(index) {}
+
+    std::ostream& print(std::ostream& os) const override
+    {
+        return os << index;
+    }
+};
+
+class EnvironmentObserver
+{
+private:
+    std::map<int, std::unique_ptr<BindingInfoBase>> bindings;
+
+public:
+
+    void bind_var_var(int u, int v)
+    {
+        bindings[u] = std::make_unique<VariableBinding>(v);
+    }
+
+    template <typename T>
+    void bind_var_val(int var, T const* val)
+    {
+        bindings[var] = std::make_unique<ValueBinding<T>>(val);
+    }
+
+    void release_binding(int var)
+    {
+        auto kv = bindings.find(var);
+        if (kv != bindings.end())
+        {
+            bindings.erase(var);
+        }
+        else
+        {
+            std::cerr << "release_binding(" << var << "): "
+                << "Binding was never observed in the first place.\n";
+        }
+    }
+
+    void save_checkpoint(std::size_t chkpt)
+    {
+//        std::cout << "save_checkpoint() == " << chkpt
+//                  << " Environment: " << *this << "\n";
+    }
+
+    void revert_to_checkpoint(std::size_t pos, std::vector<Binding> const& bindings)
+    {
+//        std::cout << "revert_to_checkpoint(" << chkpt
+//                  << ") Environment: " << *this << "\n";
+
+        for (auto iter = bindings.rbegin(); iter != bindings.rend()-pos; iter++)
+            release_binding(iter->from);
     }
 };
 
@@ -87,7 +151,7 @@ class Environment
 {
 private:
     std::vector<Binding> bindings;
-    std::map<int, std::unique_ptr<ValuePrinterBase>> printers;
+    EnvironmentObserver* observer = nullptr;
 
     Term walk(Term const& v) const
     {
@@ -120,6 +184,8 @@ private:
             else
             {
                 env.bindings.push_back({u, v});
+                if (env.observer)
+                    env.observer->bind_var_var(u, v);
                 return true;
             }
         }
@@ -130,10 +196,9 @@ private:
                 return false;
             else
             {
-                std::cout << " add binding {" << u << ","
-                    << v << " " << *static_cast<T const*>(v) << "}\n";
                 env.bindings.push_back({u, v});
-                env.printers[u] = std::make_unique<ValuePrinter<T>>();
+                if (env.observer)
+                    env.observer->bind_var_val(u, static_cast<T const*>(v));
                 return true;
             }
         }
@@ -154,17 +219,17 @@ private:
                 T const* u_ = static_cast<T const*>(u);
                 T const* v_ = static_cast<T const*>(v);
 
-                std::cout << "unify_value(" << u << " " << *u_ << ", "
-                    << v << " " << *v_ << ") == ";
+//                std::cout << "unify_value(" << u << " " << *u_ << ", "
+//                    << v << " " << *v_ << ") == ";
 
                 if (unify_value(u_, v_, env))
                 {
-                    std::cout << "success\n";
+//                    std::cout << "success\n";
                     return true;
                 }
                 else
                 {
-                    std::cout << "failure\n";
+//                    std::cout << "failure\n";
                     env.revert_to_checkpoint(chkpt);
                     return false;
                 }
@@ -182,45 +247,50 @@ private:
         return std::visit(visitor, u_, v_);
     }
 
-    std::ostream& print(std::ostream& os, std::optional<std::size_t> cursor = std::nullopt) const
-    {
-        for (std::size_t i=0; i<bindings.size(); i++)
-        {
-            if (i == cursor)
-                os << "(<-- here) ";
-
-            auto const& b = bindings[i];
-
-            os << "{" << b.from << ",";
-
-            if (auto p = std::get_if<void const*>(&b.to))
-            {
-                // debugging
-                auto x = lookup(b.from);
-                if (!x)
-                    throw std::logic_error("var not found or not a value");
-                else
-                {
-                    auto p2 = *x;
-                    if (p2 != *p)
-                        throw std::logic_error("ptr to val does not match");
-                }
-
-                printers.at(b.from)->print(os, *p);
-            }
-            else  // b.to is a var
-                os << std::get<int>(b.to);
-            os << "} ";
-        }
-        return os;
-    }
+//    std::ostream& print(std::ostream& os, std::optional<std::size_t> cursor = std::nullopt) const
+//    {
+//        for (std::size_t i=0; i<bindings.size(); i++)
+//        {
+//            if (i == cursor)
+//                os << "(<-- here) ";
+//
+//            auto const& b = bindings[i];
+//
+//            os << "{" << b.from << ",";
+//
+//            if (auto p = std::get_if<void const*>(&b.to))
+//            {
+//                // debugging
+//                auto x = lookup(b.from);
+//                if (!x)
+//                    throw std::logic_error("var not found or not a value");
+//                else
+//                {
+//                    auto p2 = *x;
+//                    if (p2 != *p)
+//                        throw std::logic_error("ptr to val does not match");
+//                }
+//
+//                printers.at(b.from)->print(os, *p);
+//            }
+//            else  // b.to is a var
+//                os << std::get<int>(b.to);
+//            os << "} ";
+//        }
+//        return os;
+//    }
 
 public:
 
-    friend std::ostream& operator <<(std::ostream& os, Environment const& env)
+    void set_observer(EnvironmentObserver* obs)
     {
-        return env.print(os);
+        observer = obs;
     }
+
+//    friend std::ostream& operator <<(std::ostream& os, Environment const& env)
+//    {
+//        return env.print(os);
+//    }
 
     template <typename T>
     std::optional<T const*> lookup(lvar<T> var) const
@@ -279,20 +349,21 @@ public:
 
     std::size_t save_checkpoint() const
     {
-        std::cout << "save_checkpoint() == " << bindings.size()
-            << " Environment: " << *this << "\n";
-        return bindings.size();
+        std::size_t chkpt = bindings.size();
+
+        if (observer)
+            observer->save_checkpoint(chkpt);
+
+        return chkpt;
     }
 
     void revert_to_checkpoint(std::size_t pos)
     {
-        std::cout << "revert_to_checkpoint(" << bindings.size() << ") "
-           << " Environment: ";
-        print(std::cout, pos);
-        std::cout << "\n";
-
         if (pos > bindings.size())
             throw std::out_of_range("Bindings is already shorter than checkpoint.");
+
+        if (observer)
+            observer->revert_to_checkpoint(pos, bindings);
 
         bindings.resize(pos);
     }

@@ -91,10 +91,6 @@ void Ancestor::reset()
 
 bool Ancestor::step(Environment& env, int& var_counter)
 {
-    std::cout << "Ancestor::step(), previous:\n";
-    print(std::cout, 0);
-    std::cout << std::endl;
-
     switch (next_step)
     {
         case 0:
