@@ -19,8 +19,8 @@ void ParseListener::enterQuasiQuoteSql(ExprParser::QuasiQuoteSqlContext* ctx)
 {
     auto tokens = parser->getTokenStream();
     std::string text = tokens->getText(ctx->sql_stmt_list());
-    std::cout << "SQL statements: "
-              << text << "\n";
+    //std::cout << "SQL statements: "
+    //          << text << "\n";
 }
 
 void ParseListener::enterQuasiQuoteCsv(ExprParser::QuasiQuoteCsvContext* ctx)

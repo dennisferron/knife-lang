@@ -28,12 +28,26 @@ options {
 }
 
 /** The start rule; begin parsing here. */
-prog:   stat* EOF ; 
+prog:   relation* EOF ;
 
-stat:   expr2  EXPR_NEWLINE              
-    |   EXPR_ID EXPR_ASGN expr2 EXPR_NEWLINE 
-    |   EXPR_NEWLINE
+relation: relation_header EXPR_OPEN_BRACE stat* EXPR_CLOSE_BRACE;
+
+relation_header: EXPR_RELATION EXPR_ID EXPR_OPEN_PAR relation_param_list? EXPR_CLOSE_PAR;
+relation_param_list: relation_param (EXPR_COMMA relation_param)*;
+relation_param: EXPR_ID (EXPR_COLON EXPR_ID)?;
+
+stat: (
+        let_stmt
+    |   fresh_stmt
+    |   expr2
+    |   EXPR_ID EXPR_ASGN expr2
+    ) EXPR_SEMICOLON
     ;
+
+let_stmt: EXPR_LET EXPR_ID type_annotation? EXPR_ASGN expr2;
+fresh_stmt: EXPR_FRESH EXPR_ID type_annotation?;
+
+type_annotation: EXPR_COLON EXPR_ID;
 
 expr2:
 	   EXPR_OPEN_QUASIQUOTE quasiquote
@@ -49,6 +63,9 @@ quasiquote:
 	|  QUASIQUOTE_CSV csv_row_list CSV_CLOSE_QUASIQUOTE #quasiQuoteCsv
     ;
 
+csv_header: CSV_OPEN_PAR csv_params_list CSV_CLOSE_PAR CSV_NEWLINE;
+csv_params_list: csv_param (CSV_COMMA csv_param)*;
+csv_param: CSV_TEXT (CSV_COLON CSV_TEXT)?;
 csv_row_list: csv_row+;
 csv_row: csv_field (CSV_COMMA csv_field)* CSV_NEWLINE;
 csv_field:  CSV_TEXT #csvTextField
@@ -56,7 +73,7 @@ csv_field:  CSV_TEXT #csvTextField
         |   #csvEmptyField
         ;
 
-sql_stmt_list: ';'* sql_stmt (';'+ sql_stmt)* ';'*;
+sql_stmt_list: SQL_SEMICOL* sql_stmt (SQL_SEMICOL+ sql_stmt)* SQL_SEMICOL*;
 
 sql_stmt: (EXPLAIN (QUERY PLAN)?)? (
 		alter_table_stmt
@@ -198,7 +215,7 @@ create_trigger_stmt:
 		| INSERT
 		| (UPDATE ( OF column_name ( SQL_COMMA column_name)*)?)
 	) ON table_name (FOR EACH ROW)? (WHEN expr)? BEGIN (
-		(update_stmt | insert_stmt | delete_stmt | select_stmt) ';'
+		(update_stmt | insert_stmt | delete_stmt | select_stmt) SQL_SEMICOL
 	)+ END;
 
 create_view_stmt:
@@ -252,7 +269,7 @@ expr:
 	| expr '||' expr
 	| expr ( SQL_STAR | SQL_DIV | '%') expr
 	| expr ( SQL_PLUS | SQL_MINUS) expr
-	| expr ( '<<' | '>>' | '&' | '|') expr
+	| expr ( '<<' | '>>' | SQL_AMP | SQL_PIPE) expr
 	| expr ( '<' | '<=' | '>' | '>=') expr
 	| expr (
 		SQL_ASSIGN

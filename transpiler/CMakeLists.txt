@@ -40,3 +40,61 @@ set(extra_static_compile_flags "-DUSE_UTF8_INSTEAD_OF_CODECVT -DANTLR4CPP_STATIC
 
 set_target_properties(transpiler PROPERTIES COMPILE_FLAGS ${extra_static_compile_flags})
 
+set(ANTLR_JAVA_OPTIONS -o ${CMAKE_CURRENT_BINARY_DIR})
+
+# In order to run the ANTLR4 TestRig, we need to generate and compile
+# a Java version of the lexer and parser.  I'm taking some shortcuts
+# with the dependencies between the following commands by choosing a
+# single "representative" file among the many which are generated and
+# pretending that is the (only) interdependency.  Since ANTLR4 generates
+# all the relevant files as a set (e.g. ExprLexer.java and ExprLexer.tokens,
+# or ExprParser.java with ExprBaseListener.java, etc.), it should still
+# lead to the same commands being run as necessary.
+
+add_custom_command(
+        COMMAND ${ANTLR_COMMAND} ${ANTLR_JAVA_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR}/ExprLexer.g4
+        DEPENDS ExprLexer.g4
+        OUTPUT ExprLexer.java #ExprLexer.tokens (also generated)
+        COMMENT "Running ANTLR4 (Java) to generate Java Expr lexer."
+)
+
+# We want the following command to depend upon the former because the
+# file ExprLexer.tokens is required as an input to parser generation.
+# However since we previously declared ExprLexer.tokens as a target of
+# generating the C++ lexer, so also making it a target of the
+# Java version of the lexer generation command would override that.
+# So instead we pretend to depend on ExprLexer.java as a stand-in.
+
+add_custom_command(
+        COMMAND ${ANTLR_COMMAND} ${ANTLR_JAVA_OPTIONS} ${CMAKE_CURRENT_SOURCE_DIR}/ExprParser.g4
+        DEPENDS ExprParser.g4 ExprLexer.java #force generate ExprLexer.tokens
+        OUTPUT ExprParser.java
+        COMMENT "Running ANTLR4 (Java) to generate Java Expr parser."
+)
+
+# Again, a shortcut:
+
+add_custom_command(
+        COMMAND javac Expr*.java
+        DEPENDS ExprParser.java ExprLexer.java
+        OUTPUT ExprParser.class
+        COMMENT "Running Java compiler to compile Java version of Lexer and Parser."
+)
+
+set(GRUN_COMMAND java org.antlr.v4.gui.TestRig)
+set(GRUN_OPTIONS Expr prog)
+set(GRUN_INPUT ${CMAKE_CURRENT_SOURCE_DIR}/../user_prog/examples/ancestor.knf)
+
+add_custom_target(
+        grun_tree
+        COMMAND ${GRUN_COMMAND} ${GRUN_OPTIONS} -tree ${GRUN_INPUT}
+        DEPENDS ${GRUN_INPUT} ExprParser.class
+        COMMENT "Running ANTLR4 TestRig (Java) to debug the Java grammar."
+)
+
+add_custom_target(
+        grun_gui
+        COMMAND ${GRUN_COMMAND} ${GRUN_OPTIONS} -gui ${GRUN_INPUT}
+        DEPENDS ${GRUN_INPUT} ExprParser.class
+        COMMENT "Running ANTLR4 TestRig (Java) to debug the Java grammar."
+)

@@ -6,7 +6,9 @@
 #include <iostream>
 #include <string>
 
-class CerrErrorListener : public antlr4::BaseErrorListener
+// We want to be warned about ambiguous parses while developing grammar,
+// so using DiagnosticErrorListener in place of BaseErrorListener.
+class CerrErrorListener : public antlr4::DiagnosticErrorListener
 {
     virtual void syntaxError(
             antlr4::Recognizer* recognizer,
@@ -17,7 +19,6 @@ class CerrErrorListener : public antlr4::BaseErrorListener
             std::exception_ptr e) override
     {
         std::cerr << "Error on Line(" << line << ":" << charPositionInLine << ") Error(" << msg << ")";
-        //throw std::invalid_argument(s.str());
     }
 };
 
@@ -169,9 +170,9 @@ int main(int argc, char* argv[])
 
         ExprLexer expr_lexer(&expr_strm);
 
-        CerrErrorListener expr_error_listner;
+        CerrErrorListener expr_error_listener;
         expr_lexer.removeErrorListeners();
-        expr_lexer.addErrorListener(&expr_error_listner);
+        expr_lexer.addErrorListener(&expr_error_listener);
 
         antlr4::CommonTokenStream expr_tokens(&expr_lexer);
 
@@ -185,14 +186,25 @@ int main(int argc, char* argv[])
         antlr4::tree::ParseTree* expr_tree = expr_parser.prog();
         //std::cout << expr_tree->toStringTree(&expr_parser, true) << std::endl;
 
+        expr_parser.removeErrorListeners(); // remove ConsoleErrorListener
+        expr_parser.addErrorListener(&expr_error_listener);
+
         antlr4::tree::ParseTreeWalker walker;
         ParseListener listener(&expr_parser);
         walker.walk(&listener, expr_tree); // initiate walk of tree with listener
+
+        if (auto errs = expr_parser.getNumberOfSyntaxErrors())
+        {
+            std::cerr << errs << " syntax errors." << std::endl;
+            return -1;
+        }
     }
 
     output_header(output_base_name);
     output_source(output_base_name);
     output_db_init(output_base_name);
+
+    std::cout << "Transpiler finished." << std::endl;
 
     return 0;
 }

@@ -1,0 +1,24 @@
+relation Parent(p : Person, c : Person)
+{
+    let mothers = {| CSV(p, c)
+        alice, bob
+        debbie, edith
+    |};
+
+    let fathers = {| CSV(p, c)
+        bob, chris
+        chris, debbie
+    |};
+
+    yield eq(Person(mothers.p), p) & eq(Person(mothers.c), c)
+        | eq(Person(fathers.p), p) & eq(Person(fathers.c), c)
+        ;
+}
+
+relation Ancestor(ans : Person, des : Person)
+{
+    fresh x : Person;
+    yield Parent(ans, des)
+        | Parent(x, des) && Ancestor(ans, x)
+        ;
+}

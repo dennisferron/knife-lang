@@ -13,7 +13,7 @@ set(stst_output_hpp ${transpile_base_name}.hpp)
 set(stst_output_cpp ${transpile_base_name}.cpp)
 set(stst_output_sql ${transpile_base_name}.sql)
 
-set(transpile_inputs examples/family_con.kf)
+set(transpile_inputs examples/ancestor.knf)
 set(stst_templates_dir ${CMAKE_SOURCE_DIR}/templates)
 set(sqlite_output_db ${transpile_base_name}.db)
 

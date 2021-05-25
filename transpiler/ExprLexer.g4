@@ -24,6 +24,16 @@
 lexer grammar ExprLexer;
 
 EXPR_OPEN_QUASIQUOTE : '{|' -> mode(QUASIQUOTE);
+
+EXPR_LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> skip;
+EXPR_BLOCK_COMMENT: '/*' .*? '*/' -> skip;
+EXPR_WS  :   [ \t\r\n]+ -> skip ; // toss out whitespace
+
+EXPR_LET : 'let';
+EXPR_FRESH : 'fresh';
+EXPR_RELATION : 'relation';
+EXPR_YIELD : 'yield';
+
 EXPR_PLUS : '+';
 EXPR_MINUS : '-';
 EXPR_MULT : '*';
@@ -31,14 +41,15 @@ EXPR_DIV : '/';
 EXPR_ASGN : '=';
 EXPR_ID  :   [a-zA-Z_] [a-zA-Z_0-9]* ;
 EXPR_INT :   [0-9]+ ;         // match integers
-EXPR_NEWLINE: '\r'? '\n' ;    // return newlines to parser (is end-statement signal)
-EXPR_WS  :   [ \t]+ -> skip ; // toss out whitespace
 EXPR_OPEN_PAR : '(';
 EXPR_CLOSE_PAR : ')';
-
-EXPR_BLOCK_COMMENT : '/*' .*? '*/' -> skip;
-EXPR_LINE_COMMENT : '//' .*? '\n' -> skip;
-
+EXPR_OPEN_BRACE : '{';
+EXPR_CLOSE_BRACE : '}';
+EXPR_COLON : ':';
+EXPR_SEMICOLON : ';';
+EXPR_BAR : '|';
+EXPR_AMP : '&';
+EXPR_COMMA: ',';
 
 mode QUASIQUOTE;
 QUASIQUOTE_CSV : 'CSV' -> mode(CSV);
@@ -49,16 +60,21 @@ mode CSV;
 
 CSV_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
 
+// TODO: These could go in a CSV_HEADER mode -- if needed.
+CSV_OPEN_PAR : '(';
+CSV_CLOSE_PAR : ')';
+CSV_COLON : ':';
+
 CSV_COMMA : ',';
+CSV_TEXT   : ~[,\n\r"|}]+ ;
 CSV_NEWLINE : '\r'? '\n';
-CSV_TEXT   : ~[,\n\r"]+ ;
 CSV_STRING : '"' ('""'|~'"')* '"' ; // quote-quote is an escaped quote
 CSV_WS  :   [ \t]+ -> skip ; // toss out whitespace
 
 mode SQLITE;
 
 SQL_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
-SCOL: ';';
+SQL_SEMICOL: ';';
 DOT: '.';
 SQL_OPEN_PAR: '(';
 SQL_CLOSE_PAR: ')';
@@ -73,8 +89,8 @@ SQL_DIV: '/';
 MOD: '%';
 LT2: '<<';
 GT2: '>>';
-AMP: '&';
-PIPE: '|';
+SQL_AMP: '&';
+SQL_PIPE: '|';
 LT: '<';
 LT_EQ: '<=';
 GT: '>';
