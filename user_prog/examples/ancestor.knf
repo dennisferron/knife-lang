@@ -19,6 +19,6 @@ relation Ancestor(ans : Person, des : Person)
 {
     fresh x : Person;
     yield Parent(ans, des)
-        | Parent(x, des) && Ancestor(ans, x)
+        | Parent(x, des) & Ancestor(ans, x)
         ;
 }

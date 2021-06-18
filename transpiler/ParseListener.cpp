@@ -1,7 +1,7 @@
 #include "ParseListener.hpp"
 
-ParseListener::ParseListener(ExprParser* parser)
-    : parser(parser)
+ParseListener::ParseListener(ExprParser* parser, lang::Program* program)
+    : parser(parser), program(program)
 {
 }
 
@@ -29,5 +29,11 @@ void ParseListener::enterQuasiQuoteCsv(ExprParser::QuasiQuoteCsvContext* ctx)
     std::string text = tokens->getText(ctx->csv_row_list());
     std::cout << "CSV rows: "
               << text << "\n";
+}
+
+void ParseListener::enterRelation_name(ExprParser::Relation_nameContext* ctx)
+{
+    std::string id = ctx->EXPR_ID()->getText();
+    program->relations.push_back(lang::Relation(id));
 }
 

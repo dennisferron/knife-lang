@@ -2,6 +2,7 @@
 #include "ExprLexer.h"
 #include "ExprParser.h"
 #include "ParseListener.hpp"
+#include "Json.hpp"
 
 #include <iostream>
 #include <string>
@@ -22,36 +23,85 @@ class CerrErrorListener : public antlr4::DiagnosticErrorListener
     }
 };
 
-void output_header(std::string output_base_name)
+void output_header(std::string output_base_name, lang::Program const& program)
 {
     std::string output_json_file = output_base_name + "_header.json";
     std::ofstream ofs(output_json_file);
 
-    ofs << "{\n";
-    ofs << R"( "className":")" << output_base_name << R"(", )";
-    ofs << R"(
-	"vars":[
-		"p",
-		"c"
-	],
+    JsonDocument doc(ofs);
+    JsonObject& root = doc.get_root();
+    root["className"] = output_base_name;
 
-	"statements":[
-		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
-		{ "template":"print_statement", "args":{"var":"x"}},
-		{ "template":"return_statement", "args":{"value":42}}
-	]
-})";
-    ofs << "}";
+    root["vars"] = [](JsonArray arr)
+    {
+        arr("p", "c");
+    };
 
-    ofs.close();
+    root["some_obj"] = [](JsonObject obj)
+    {
+        obj["x"] = 1;
+    };
+
+    root["statements"] = [](JsonArray a)
+    {
+        a += [](JsonObject o)
+        {
+            o["template"] = "assign_statement";
+            o["args"] = [](JsonObject o)
+            {
+                o["assignee"] = "x";
+                o["expr"] = "2+b";
+            };
+        };
+
+        a += [](JsonObject o)
+        {
+            o["template"] = "print_statement";
+            o["args"] = [](JsonObject o)
+            {
+                o["var"] = "x";
+            };
+        };
+
+        a += [](JsonObject o)
+        {
+            o["template"] = "return_statement";
+            o["args"] = [](JsonObject o)
+            {
+                o["value"] = "42";
+            };
+        };
+    };
+
+    //ofs.close();
 }
 
-void output_source(std::string output_base_name)
+
+void output_json(std::ofstream& ofs, lang::Relation const& relation)
+{
+    ofs << R"({\n)";
+    ofs << R"("name": ")" << relation.get_name() << R"(",)";
+    ofs << R"(},\n)";
+}
+
+void output_json(std::ofstream& ofs,
+        std::vector<lang::Relation> const& relations)
+{
+    ofs << R"("relations": [\n)";
+    for (auto const& r : relations)
+        output_json(ofs, r);
+    ofs << R"(],\n)";
+}
+
+void output_source(std::string output_base_name, lang::Program const& program)
 {
     std::string output_json_file = output_base_name + "_source.json";
     std::ofstream ofs(output_json_file);
 
+
+
     ofs << "{\n";
+    output_json(ofs, program.relations);
     ofs << R"( "className":")" << output_base_name << R"(", )";
     ofs << R"(
 	"vars":[
@@ -70,7 +120,7 @@ void output_source(std::string output_base_name)
     ofs.close();
 }
 
-void output_db_init(std::string output_base_name)
+void output_db_init(std::string output_base_name, lang::Program const& program)
 {
     std::string output_json_file = output_base_name + "_db_init.json";
     std::ofstream ofs(output_json_file);
@@ -157,6 +207,10 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    // Information gleaned by the parse listener on all
+    // of the input files will be accumulated in this object.
+    lang::Program program;
+
     for (std::string expr_file : input_files)
     {
         antlr4::ANTLRFileStream expr_strm(expr_file);
@@ -190,7 +244,7 @@ int main(int argc, char* argv[])
         expr_parser.addErrorListener(&expr_error_listener);
 
         antlr4::tree::ParseTreeWalker walker;
-        ParseListener listener(&expr_parser);
+        ParseListener listener(&expr_parser, &program);
         walker.walk(&listener, expr_tree); // initiate walk of tree with listener
 
         if (auto errs = expr_parser.getNumberOfSyntaxErrors())
@@ -200,9 +254,9 @@ int main(int argc, char* argv[])
         }
     }
 
-    output_header(output_base_name);
-    output_source(output_base_name);
-    output_db_init(output_base_name);
+    output_header(output_base_name, program);
+    output_source(output_base_name, program);
+    output_db_init(output_base_name, program);
 
     std::cout << "Transpiler finished." << std::endl;
 

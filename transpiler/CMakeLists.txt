@@ -29,7 +29,7 @@ add_custom_command(
         COMMENT "Running ANTLR4 (Java) to generate the Expr parser."
 )
 
-add_executable(transpiler main.cpp ${EXPR_LEXER_OUTPUTS} ${EXPR_PARSER_OUTPUTS} ${SUBST_GEN_OUTPUTS} ParseListener.cpp ParseListener.hpp)
+add_executable(transpiler main.cpp ${EXPR_LEXER_OUTPUTS} ${EXPR_PARSER_OUTPUTS} ${SUBST_GEN_OUTPUTS} ParseListener.cpp ParseListener.hpp Relation.cpp Relation.hpp Program.cpp Program.hpp Json.cpp Json.hpp)
 target_link_libraries(transpiler antlr4_static)
 
 target_include_directories(transpiler
@@ -95,6 +95,13 @@ add_custom_target(
 add_custom_target(
         grun_gui
         COMMAND ${GRUN_COMMAND} ${GRUN_OPTIONS} -gui ${GRUN_INPUT}
+        DEPENDS ${GRUN_INPUT} ExprParser.class
+        COMMENT "Running ANTLR4 TestRig (Java) to debug the Java grammar."
+)
+
+add_custom_target(
+        grun_tokens
+        COMMAND ${GRUN_COMMAND} ${GRUN_OPTIONS} -tokens ${GRUN_INPUT}
         DEPENDS ${GRUN_INPUT} ExprParser.class
         COMMENT "Running ANTLR4 TestRig (Java) to debug the Java grammar."
 )

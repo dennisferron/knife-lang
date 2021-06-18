@@ -32,13 +32,15 @@ prog:   relation* EOF ;
 
 relation: relation_header EXPR_OPEN_BRACE stat* EXPR_CLOSE_BRACE;
 
-relation_header: EXPR_RELATION EXPR_ID EXPR_OPEN_PAR relation_param_list? EXPR_CLOSE_PAR;
+relation_header: EXPR_RELATION relation_name EXPR_OPEN_PAR relation_param_list? EXPR_CLOSE_PAR;
+relation_name: EXPR_ID;
 relation_param_list: relation_param (EXPR_COMMA relation_param)*;
 relation_param: EXPR_ID (EXPR_COLON EXPR_ID)?;
 
 stat: (
         let_stmt
     |   fresh_stmt
+    |   yield_stmt
     |   expr2
     |   EXPR_ID EXPR_ASGN expr2
     ) EXPR_SEMICOLON
@@ -46,26 +48,33 @@ stat: (
 
 let_stmt: EXPR_LET EXPR_ID type_annotation? EXPR_ASGN expr2;
 fresh_stmt: EXPR_FRESH EXPR_ID type_annotation?;
+yield_stmt: EXPR_YIELD expr2;
 
 type_annotation: EXPR_COLON EXPR_ID;
 
 expr2:
 	   EXPR_OPEN_QUASIQUOTE quasiquote
-    |  expr2 (EXPR_MULT|EXPR_DIV) expr2
-    |   expr2 (EXPR_PLUS|EXPR_MINUS) expr2   
+    |  expr2 (EXPR_MULT|EXPR_DIV|EXPR_AMP) expr2
+    |   expr2 (EXPR_PLUS|EXPR_MINUS|EXPR_BAR) expr2
+    |  call_expression
     |   EXPR_INT                    
     |   EXPR_ID                    
-    |   EXPR_OPEN_PAR expr2 EXPR_CLOSE_PAR         
+    |   EXPR_OPEN_PAR expr2 EXPR_CLOSE_PAR
+    |   EXPR_ID EXPR_DOT EXPR_ID
     ;
+
+call_expression: EXPR_ID EXPR_OPEN_PAR call_param_list EXPR_CLOSE_PAR;
+call_param_list: call_param (EXPR_COMMA call_param)*;
+call_param: expr2;
 
 quasiquote:
 	   QUASIQUOTE_SQL sql_stmt_list SQL_CLOSE_QUASIQUOTE #quasiQuoteSql
-	|  QUASIQUOTE_CSV csv_row_list CSV_CLOSE_QUASIQUOTE #quasiQuoteCsv
+	|  QUASIQUOTE_CSV csv_header csv_row_list CSV_CLOSE_QUASIQUOTE #quasiQuoteCsv
     ;
 
-csv_header: CSV_OPEN_PAR csv_params_list CSV_CLOSE_PAR CSV_NEWLINE;
-csv_params_list: csv_param (CSV_COMMA csv_param)*;
-csv_param: CSV_TEXT (CSV_COLON CSV_TEXT)?;
+csv_header: CSV_HDR_OPEN_PAR csv_params_list CSV_HDR_CLOSE_PAR CSV_HDR_NEWLINE;
+csv_params_list: csv_param (CSV_HDR_COMMA csv_param)*;
+csv_param: CSV_HDR_ID (CSV_HDR_COLON CSV_HDR_ID)?;
 csv_row_list: csv_row+;
 csv_row: csv_field (CSV_COMMA csv_field)* CSV_NEWLINE;
 csv_field:  CSV_TEXT #csvTextField
@@ -103,7 +112,7 @@ sql_stmt: (EXPLAIN (QUERY PLAN)?)? (
 	);
 
 alter_table_stmt:
-	ALTER TABLE (schema_name '.')? table_name (
+	ALTER TABLE (schema_name SQL_DOT)? table_name (
 		RENAME (
 			(TO new_table_name)
 			| (
@@ -116,7 +125,7 @@ alter_table_stmt:
 analyze_stmt:
 	ANALYZE (
 		schema_name
-		| (schema_name '.')? table_or_index_name
+		| (schema_name SQL_DOT)? table_or_index_name
 	)?;
 
 attach_stmt: ATTACH DATABASE? expr AS schema_name;
@@ -136,7 +145,7 @@ savepoint_stmt: SAVEPOINT savepoint_name;
 release_stmt: RELEASE SAVEPOINT? savepoint_name;
 
 create_index_stmt:
-	CREATE UNIQUE? INDEX (IF NOT EXISTS)? (schema_name '.')? index_name ON table_name SQL_OPEN_PAR
+	CREATE UNIQUE? INDEX (IF NOT EXISTS)? (schema_name SQL_DOT)? index_name ON table_name SQL_OPEN_PAR
 		indexed_column (SQL_COMMA indexed_column)* SQL_CLOSE_PAR (WHERE expr)?;
 
 indexed_column:
@@ -144,7 +153,7 @@ indexed_column:
 
 create_table_stmt:
 	CREATE (TEMP | TEMPORARY)? TABLE (IF NOT EXISTS)? (
-		schema_name '.'
+		schema_name SQL_DOT
 	)? table_name (
 		(
 			SQL_OPEN_PAR column_def (SQL_COMMA column_def)* (
@@ -209,7 +218,7 @@ conflict_clause:
 	ON CONFLICT (ROLLBACK | ABORT | FAIL | IGNORE | REPLACE);
 create_trigger_stmt:
 	CREATE (TEMP | TEMPORARY)? TRIGGER (IF NOT EXISTS)? (
-		schema_name '.'
+		schema_name SQL_DOT
 	)? trigger_name (BEFORE | AFTER | (INSTEAD OF))? (
 		DELETE
 		| INSERT
@@ -220,11 +229,11 @@ create_trigger_stmt:
 
 create_view_stmt:
 	CREATE (TEMP | TEMPORARY)? VIEW (IF NOT EXISTS)? (
-		schema_name '.'
+		schema_name SQL_DOT
 	)? view_name (SQL_OPEN_PAR column_name (SQL_COMMA column_name)* SQL_CLOSE_PAR)? AS select_stmt;
 
 create_virtual_table_stmt:
-	CREATE VIRTUAL TABLE (IF NOT EXISTS)? (schema_name '.')? table_name USING module_name (
+	CREATE VIRTUAL TABLE (IF NOT EXISTS)? (schema_name SQL_DOT)? table_name USING module_name (
 		SQL_OPEN_PAR module_argument (SQL_COMMA module_argument)* SQL_CLOSE_PAR
 	)?;
 
@@ -254,7 +263,7 @@ detach_stmt: DETACH DATABASE? schema_name;
 
 drop_stmt:
 	DROP object = (INDEX | TABLE | TRIGGER | VIEW) (IF EXISTS)? (
-		schema_name '.'
+		schema_name SQL_DOT
 	)? any_name;
 
 /*
@@ -264,7 +273,7 @@ drop_stmt:
 expr:
 	literal_value
 	| BIND_PARAMETER
-	| ( ( schema_name '.')? table_name '.')? column_name
+	| ( ( schema_name SQL_DOT)? table_name SQL_DOT)? column_name
 	| unary_operator expr
 	| expr '||' expr
 	| expr ( SQL_STAR | SQL_DIV | '%') expr
@@ -296,9 +305,9 @@ expr:
 	| expr NOT? BETWEEN expr AND expr
 	| expr NOT? IN (
 		(SQL_OPEN_PAR (select_stmt | expr ( SQL_COMMA expr)*)? SQL_CLOSE_PAR)
-		| (( schema_name '.')? table_name)
+		| (( schema_name SQL_DOT)? table_name)
 		| (
-			(schema_name '.')? table_function_name SQL_OPEN_PAR (
+			(schema_name SQL_DOT)? table_function_name SQL_OPEN_PAR (
 				expr (SQL_COMMA expr)*
 			)? SQL_CLOSE_PAR
 		)
@@ -337,7 +346,7 @@ insert_stmt:
 				| IGNORE
 			)
 		)
-	) INTO (schema_name '.')? table_name (AS table_alias)? (
+	) INTO (schema_name SQL_DOT)? table_name (AS table_alias)? (
 		SQL_OPEN_PAR column_name ( SQL_COMMA column_name)* SQL_CLOSE_PAR
 	)? (
 		(
@@ -366,7 +375,7 @@ upsert_clause:
 	);
 
 pragma_stmt:
-	PRAGMA (schema_name '.')? pragma_name (
+	PRAGMA (schema_name SQL_DOT)? pragma_name (
 		SQL_ASSIGN pragma_value
 		| SQL_OPEN_PAR pragma_value SQL_CLOSE_PAR
 	)?;
@@ -376,7 +385,7 @@ pragma_value: signed_number | name | STRING_LITERAL;
 reindex_stmt:
 	REINDEX (
 		collation_name
-		| (( schema_name '.')? ( table_name | index_name))
+		| (( schema_name SQL_DOT)? ( table_name | index_name))
 	)?;
 
 select_stmt:
@@ -421,13 +430,13 @@ compound_select_stmt:
 	)+ order_by_stmt? limit_stmt?;
 
 table_or_subquery: (
-		(schema_name '.')? table_name (AS? table_alias)? (
+		(schema_name SQL_DOT)? table_name (AS? table_alias)? (
 			(INDEXED BY index_name)
 			| (NOT INDEXED)
 		)?
 	)
 	| (
-		(schema_name '.')? table_function_name SQL_OPEN_PAR expr (
+		(schema_name SQL_DOT)? table_function_name SQL_OPEN_PAR expr (
 			SQL_COMMA expr
 		)* SQL_CLOSE_PAR (AS? table_alias)?
 	)
@@ -439,7 +448,7 @@ table_or_subquery: (
 
 result_column:
 	SQL_STAR
-	| table_name '.' SQL_STAR
+	| table_name SQL_DOT SQL_STAR
 	| expr ( AS? column_alias)?;
 
 join_operator:
@@ -468,7 +477,7 @@ update_stmt_limited:
 		SQL_COMMA (column_name | column_name_list) SQL_ASSIGN expr
 	)* (WHERE expr)? (order_by_stmt? limit_stmt)?;
 
-qualified_table_name: (schema_name '.')? table_name (AS alias)? (
+qualified_table_name: (schema_name SQL_DOT)? table_name (AS alias)? (
 		(INDEXED BY index_name)
 		| (NOT INDEXED)
 	)?;

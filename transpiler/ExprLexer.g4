@@ -27,7 +27,6 @@ EXPR_OPEN_QUASIQUOTE : '{|' -> mode(QUASIQUOTE);
 
 EXPR_LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> skip;
 EXPR_BLOCK_COMMENT: '/*' .*? '*/' -> skip;
-EXPR_WS  :   [ \t\r\n]+ -> skip ; // toss out whitespace
 
 EXPR_LET : 'let';
 EXPR_FRESH : 'fresh';
@@ -50,23 +49,33 @@ EXPR_SEMICOLON : ';';
 EXPR_BAR : '|';
 EXPR_AMP : '&';
 EXPR_COMMA: ',';
+EXPR_DOT: '.';
+
+EXPR_WS  :   [ \t\r\n]+ -> skip ; // toss out whitespace
 
 mode QUASIQUOTE;
-QUASIQUOTE_CSV : 'CSV' -> mode(CSV);
+QUASIQUOTE_CSV : 'CSV' -> mode(CSV_HEADER);
 QUASIQUOTE_SQL : 'SQL' -> mode(SQLITE);
 QUASIQUOTE_WS  :   [ \t]+ -> skip ; // toss out whitespace
+
+mode CSV_HEADER;
+
+CSV_HDR_OPEN_PAR : '(';
+CSV_HDR_CLOSE_PAR : ')';
+CSV_HDR_COLON : ':';
+CSV_HDR_COMMA : ',';
+CSV_HDR_ID  :   [a-zA-Z_] [a-zA-Z_0-9]* ;
+CSV_HDR_NEWLINE : '\r'? '\n' -> mode(CSV);
+CSV_HDR_WS  :   [ \t]+ -> skip ; // toss out whitespace
 
 mode CSV;
 
 CSV_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
 
-// TODO: These could go in a CSV_HEADER mode -- if needed.
-CSV_OPEN_PAR : '(';
-CSV_CLOSE_PAR : ')';
-CSV_COLON : ':';
+// TODO: Should CSV_TEXT be below CSV_WS and/or newline?
 
 CSV_COMMA : ',';
-CSV_TEXT   : ~[,\n\r"|}]+ ;
+CSV_TEXT   : ~[ ,\n\r"|}]+ ;
 CSV_NEWLINE : '\r'? '\n';
 CSV_STRING : '"' ('""'|~'"')* '"' ; // quote-quote is an escaped quote
 CSV_WS  :   [ \t]+ -> skip ; // toss out whitespace
@@ -75,7 +84,7 @@ mode SQLITE;
 
 SQL_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
 SQL_SEMICOL: ';';
-DOT: '.';
+SQL_DOT: '.';
 SQL_OPEN_PAR: '(';
 SQL_CLOSE_PAR: ')';
 SQL_COMMA: ',';
