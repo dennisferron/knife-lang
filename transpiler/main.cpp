@@ -23,15 +23,8 @@ class CerrErrorListener : public antlr4::DiagnosticErrorListener
     }
 };
 
-void output_header(std::string output_base_name, lang::Program const& program)
+void output_demo(JsonObject root)
 {
-    std::string output_json_file = output_base_name + "_header.json";
-    std::ofstream ofs(output_json_file);
-
-    JsonDocument doc(ofs);
-    JsonObject& root = doc.get_root();
-    root["className"] = output_base_name;
-
     root["vars"] = [](JsonArray arr)
     {
         arr("p", "c");
@@ -72,25 +65,40 @@ void output_header(std::string output_base_name, lang::Program const& program)
             };
         };
     };
-
-    //ofs.close();
 }
 
-
-void output_json(std::ofstream& ofs, lang::Relation const& relation)
+void output_header(std::string output_base_name, lang::Program const& program)
 {
-    ofs << R"({\n)";
-    ofs << R"("name": ")" << relation.get_name() << R"(",)";
-    ofs << R"(},\n)";
+    std::string output_json_file = output_base_name + "_header.json";
+    std::ofstream ofs(output_json_file);
+
+    JsonDocument doc(ofs);
+    JsonObject& root = doc.get_root();
+    root["className"] = output_base_name;
+
+    output_demo(root);
+
+    doc.close();
+    ofs.close();
 }
 
-void output_json(std::ofstream& ofs,
+
+void output_relation(JsonArray& arr, lang::Relation const& relation)
+{
+    arr += [&](JsonObject o)
+    {
+        o["name"] = relation.get_name();
+    };
+}
+
+void output_all_relations(JsonObject& json,
         std::vector<lang::Relation> const& relations)
 {
-    ofs << R"("relations": [\n)";
-    for (auto const& r : relations)
-        output_json(ofs, r);
-    ofs << R"(],\n)";
+    json["relations"] = [&](JsonArray arr)
+    {
+        for (auto const& r : relations)
+            output_relation(arr, r);
+    };
 }
 
 void output_source(std::string output_base_name, lang::Program const& program)
@@ -98,25 +106,15 @@ void output_source(std::string output_base_name, lang::Program const& program)
     std::string output_json_file = output_base_name + "_source.json";
     std::ofstream ofs(output_json_file);
 
+    JsonDocument doc(ofs);
+    JsonObject& root = doc.get_root();
+    root["className"] = output_base_name;
 
+    output_all_relations(root, program.relations);
 
-    ofs << "{\n";
-    output_json(ofs, program.relations);
-    ofs << R"( "className":")" << output_base_name << R"(", )";
-    ofs << R"(
-	"vars":[
-		"p",
-		"c"
-	],
+    output_demo(root);
 
-	"statements":[
-		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
-		{ "template":"print_statement", "args":{"var":"x"}},
-		{ "template":"return_statement", "args":{"value":42}}
-	]
-})";
-    ofs << "}";
-
+    doc.close();
     ofs.close();
 }
 
@@ -125,23 +123,12 @@ void output_db_init(std::string output_base_name, lang::Program const& program)
     std::string output_json_file = output_base_name + "_db_init.json";
     std::ofstream ofs(output_json_file);
 
-    ofs << "{\n";
+    JsonDocument doc(ofs);
+    JsonObject& root = doc.get_root();
 
-    //ofs << R"( "className":")" << output_base_name << R"(", )";
-    ofs << R"(
-	"vars":[
-		"b",
-		"x"
-	],
-
-	"statements":[
-		{ "template":"assign_statement", "args":{"assignee":"x", "expr":"2+b"}},
-		{ "template":"print_statement", "args":{"var":"x"}},
-		{ "template":"return_statement", "args":{"value":42}}
-	]
-})";
-    ofs << "}";
-
+    output_demo(root);
+    
+    doc.close();
     ofs.close();
 }
 

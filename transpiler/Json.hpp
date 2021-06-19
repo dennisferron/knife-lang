@@ -210,7 +210,7 @@ public:
         os << "{";
     }
 
-    ~JsonDocument()
+    void close()
     {
         os << "\n}";
     }
