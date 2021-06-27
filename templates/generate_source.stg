@@ -1,24 +1,30 @@
 
-source(statements, className, vars) ::= <<
+source(projectNamespace, relations) ::= <<
 // Generated Source
 
-#include "$className$.hpp"
+#include "$projectNamespace$.hpp"
 
 #include <iostream>
 
-std::ostream& $className$::print(std::ostream& os, int nesting)
+namespace $projectNamespace$
 {
-    return print_tabs(os, nesting) << "$className$("
-        $vars:print_res_var();separator=" << \",\"\n"$ << ")";
+    $relations:decl_relation();separator="\n\n"$
+} // namespace $projectNamespace$
+>>
+
+decl_relation(rel) ::= <<
+std::ostream& $rel.name$::print(std::ostream& os, int nesting)
+{
+    return print_tabs(os, nesting) << "$rel.name$("
+        $rel.vars:print_res_var();separator=" << \",\"\n"$ << ")";
 }
 
-int $className$::run()
+int $rel.name$::run()
 {
     int x = 1;
     int b = 2;
-	$statements:select_statement();separator="\n"$
+	$rel.statements:select_statement();separator="\n"$
 }
-
 >>
 
 select_statement(s) ::= <<$(s.template)(s.args)$;>>

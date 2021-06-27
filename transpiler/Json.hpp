@@ -169,7 +169,7 @@ public:
         else
             needs_comma = true;
 
-        os << value;
+        os << "\"" << value << "\"";
     }
 
     template <typename T0, typename... Ts>

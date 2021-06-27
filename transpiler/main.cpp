@@ -2,7 +2,7 @@
 #include "ExprLexer.h"
 #include "ExprParser.h"
 #include "ParseListener.hpp"
-#include "Json.hpp"
+#include "Output.hpp"
 
 #include <iostream>
 #include <string>
@@ -22,115 +22,6 @@ class CerrErrorListener : public antlr4::DiagnosticErrorListener
         std::cerr << "Error on Line(" << line << ":" << charPositionInLine << ") Error(" << msg << ")";
     }
 };
-
-void output_demo(JsonObject root)
-{
-    root["vars"] = [](JsonArray arr)
-    {
-        arr("p", "c");
-    };
-
-    root["some_obj"] = [](JsonObject obj)
-    {
-        obj["x"] = 1;
-    };
-
-    root["statements"] = [](JsonArray a)
-    {
-        a += [](JsonObject o)
-        {
-            o["template"] = "assign_statement";
-            o["args"] = [](JsonObject o)
-            {
-                o["assignee"] = "x";
-                o["expr"] = "2+b";
-            };
-        };
-
-        a += [](JsonObject o)
-        {
-            o["template"] = "print_statement";
-            o["args"] = [](JsonObject o)
-            {
-                o["var"] = "x";
-            };
-        };
-
-        a += [](JsonObject o)
-        {
-            o["template"] = "return_statement";
-            o["args"] = [](JsonObject o)
-            {
-                o["value"] = "42";
-            };
-        };
-    };
-}
-
-void output_header(std::string output_base_name, lang::Program const& program)
-{
-    std::string output_json_file = output_base_name + "_header.json";
-    std::ofstream ofs(output_json_file);
-
-    JsonDocument doc(ofs);
-    JsonObject& root = doc.get_root();
-    root["className"] = output_base_name;
-
-    output_demo(root);
-
-    doc.close();
-    ofs.close();
-}
-
-
-void output_relation(JsonArray& arr, lang::Relation const& relation)
-{
-    arr += [&](JsonObject o)
-    {
-        o["name"] = relation.get_name();
-    };
-}
-
-void output_all_relations(JsonObject& json,
-        std::vector<lang::Relation> const& relations)
-{
-    json["relations"] = [&](JsonArray arr)
-    {
-        for (auto const& r : relations)
-            output_relation(arr, r);
-    };
-}
-
-void output_source(std::string output_base_name, lang::Program const& program)
-{
-    std::string output_json_file = output_base_name + "_source.json";
-    std::ofstream ofs(output_json_file);
-
-    JsonDocument doc(ofs);
-    JsonObject& root = doc.get_root();
-    root["className"] = output_base_name;
-
-    output_all_relations(root, program.relations);
-
-    output_demo(root);
-
-    doc.close();
-    ofs.close();
-}
-
-void output_db_init(std::string output_base_name, lang::Program const& program)
-{
-    std::string output_json_file = output_base_name + "_db_init.json";
-    std::ofstream ofs(output_json_file);
-
-    JsonDocument doc(ofs);
-    JsonObject& root = doc.get_root();
-
-    output_demo(root);
-    
-    doc.close();
-    ofs.close();
-}
 
 enum class ArgMode
 {
@@ -241,9 +132,9 @@ int main(int argc, char* argv[])
         }
     }
 
-    output_header(output_base_name, program);
-    output_source(output_base_name, program);
-    output_db_init(output_base_name, program);
+    OutputHeader(output_base_name).write(program);
+    OutputSource(output_base_name).write(program);
+    OutputDbInit(output_base_name).write(program);
 
     std::cout << "Transpiler finished." << std::endl;
 

@@ -1,17 +1,24 @@
 
-header(vars, className) ::= <<
+header(projectNamespace, relations) ::= <<
 // Generated Header 
 
 #include "Environment.hpp"
 #include "DataTypes.hpp"
 
-class $className$
+namespace $projectNamespace$
+{
+    $relations:decl_relation()$
+}  // namespace $projectNamespace$
+>>
+
+decl_relation(rel) ::= <<
+class $rel.name$
 {
 private:
     int next_step = 0;
     struct Result
     {
-    	$vars:decl_lvar();separator="\n"$
+    	$rel.vars:decl_lvar();separator="\n"$
     } cached_result;
 
     std::ostream& print(std::ostream& os, int nesting);
@@ -19,7 +26,7 @@ private:
     bool bind(Environment& env);
 
 public:
-    $className$($vars:parm_lvar();separator=", "$);
+    $rel.name$($rel.vars:parm_lvar();separator=", "$);
     void reset();
 
     bool step(Environment& env, int& var_counter);
@@ -27,7 +34,6 @@ public:
     // TODO: Following is dummy function, remove:
     int run();
 };
-
 >>
 
 decl_lvar(v) ::= <<lvar<Person> $v$;>>
