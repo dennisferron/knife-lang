@@ -37,3 +37,18 @@ void ParseListener::enterRelation_name(ExprParser::Relation_nameContext* ctx)
     program->relations.push_back(lang::Relation(id));
 }
 
+void ParseListener::enterLet_stmt(ExprParser::Let_stmtContext* ctx)
+{
+    program->last_relation().add_statement(lang::LetStatement());
+}
+
+void ParseListener::enterFresh_stmt(ExprParser::Fresh_stmtContext* ctx)
+{
+    program->last_relation().add_statement(lang::FreshStatement());
+}
+
+void ParseListener::enterYield_stmt(ExprParser::Yield_stmtContext* ctx)
+{
+    program->last_relation().add_statement(lang::YieldStatement());
+}
+

@@ -65,16 +65,69 @@ void Output::demo(JsonObject root)
     };
 }
 
+void Output::write_statement(JsonArray& arr, lang::LetStatement const& statement)
+{
+    arr += [&](JsonObject o)
+    {
+        o["type"] = "let statement";
+        o["template"] = "return_statement";
+        o["args"] = [](JsonObject o)
+        {
+            o["value"] = "42";
+        };
+    };
+}
+
+void Output::write_statement(JsonArray& arr, lang::FreshStatement const& statement)
+{
+    arr += [&](JsonObject o)
+    {
+        o["type"] = "fresh statement";
+        o["template"] = "return_statement";
+        o["args"] = [](JsonObject o)
+        {
+            o["value"] = "42";
+        };
+    };
+}
+
+void Output::write_statement(JsonArray& arr, lang::YieldStatement const& statement)
+{
+    arr += [&](JsonObject o)
+    {
+        o["type"] = "yield statement";
+        o["template"] = "return_statement";
+        o["args"] = [](JsonObject o)
+        {
+            o["value"] = "42";
+        };
+    };
+}
+
+void Output::write_all_statements(
+        JsonObject& json,
+        std::vector<lang::Statement> const& statements)
+{
+    json["statements"] = [&](JsonArray arr)
+    {
+        for (auto const& stmt : statements)
+        {
+            auto action = [&](auto s) { write_statement(arr, s); };
+            std::visit(action, stmt);
+        }
+    };
+}
+
 void Output::write(JsonArray& arr, lang::Relation const& relation)
 {
     arr += [&](JsonObject o)
     {
         o["name"] = relation.get_name();
-        demo(o);
-//        o["vars"] = [](JsonArray arr)
-//        {
-//            arr("p", "c");
-//        };
+        o["vars"] = [](JsonArray arr)
+        {
+            arr("p", "c");
+        };
+        write_all_statements(o, relation.get_statements());
     };
 }
 

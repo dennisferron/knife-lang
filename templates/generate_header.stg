@@ -16,9 +16,13 @@ class $rel.name$
 {
 private:
     int next_step = 0;
+    std::size_t checkpoint = 0;
+
+    $rel.vars:decl_lvar();separator="\n"$
+
     struct Result
     {
-    	$rel.vars:decl_lvar();separator="\n"$
+    	$rel.vars:decl_result_var();separator="\n"$
     } cached_result;
 
     std::ostream& print(std::ostream& os, int nesting);
@@ -37,6 +41,6 @@ public:
 >>
 
 decl_lvar(v) ::= <<lvar<Person> $v$;>>
-decl_res_var(v) ::= <<Person $v$;>>
+decl_result_var(v) ::= <<Person $v$;>>
 
 parm_lvar(v) ::= <<lvar<Person> $v$>>

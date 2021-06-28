@@ -19,6 +19,15 @@ protected:
     void write_all_relations(
         JsonObject& json,
         std::vector<lang::Relation> const& relations);
+
+    void write_all_statements(
+            JsonObject& json,
+            std::vector<lang::Statement> const& statements);
+
+    void write_statement(JsonArray& arr, lang::LetStatement const& statement);
+    void write_statement(JsonArray& arr, lang::FreshStatement const& statement);
+    void write_statement(JsonArray& arr, lang::YieldStatement const& statement);
+
 public:
     ~Output();
     void close();
