@@ -8,16 +8,21 @@ source(projectNamespace, relations) ::= <<
 
 namespace $projectNamespace$
 {
-    $relations:decl_relation();separator="\n\n"$
+    $relations:defn_relation();separator="\n\n"$
 } // namespace $projectNamespace$
 >>
 
-decl_relation(rel) ::= <<
-    $decl_print(rel)$
-    $decl_run(rel)$
+defn_relation(rel) ::= <<
+    $defn_print(rel)$
+
+    $defn_run(rel)$
+
+    $defn_bind(rel)$
+
+    $defn_step(rel)$
 >>
 
-decl_print(rel) ::= <<
+defn_print(rel) ::= <<
 std::ostream& $rel.name$::print(std::ostream& os, int nesting)
 {
     return print_tabs(os, nesting) << "$rel.name$("
@@ -25,13 +30,56 @@ std::ostream& $rel.name$::print(std::ostream& os, int nesting)
 }
 >>
 
-decl_run(rel) ::= <<
+defn_run(rel) ::= <<
 int $rel.name$::run()
 {
     int x = 1;
     int b = 2;
 	$rel.statements:select_statement();separator="\n"$
+	return 0;
 }
+>>
+
+defn_bind(rel) ::= <<
+bool $rel.name$::bind(Environment& env)
+{
+    checkpoint = env.save_checkpoint();
+
+    bool success = $rel.vars:bind_var();separator="\n\t\t\t&& "$;
+
+    if (!success)
+        env.revert_to_checkpoint(checkpoint);
+
+    return success;
+}
+>>
+
+bind_var(v) ::= <<env.eq($v$, &cached_result.$v$)>>
+
+defn_step(rel) ::= <<
+bool $rel.name$::number(Environment& env, int& var_counter)
+{
+    if (next_step > 0)  // Remove previous bindings
+        env.revert_to_checkpoint(checkpoint);
+
+    switch (next_step)
+    {
+    $rel.step_cases:step_case();separator="\n"$
+    default:
+        env.revert_to_checkpoint(checkpoint);
+        next_step = -1;
+        return false;
+    }
+}
+>>
+
+step_case(c) ::= <<
+    case $c.number$:
+        next_step = $c.next_step$;
+        cached_result = Result { $c.result:{v|"$v$"};separator=", "$ };
+        if (bind(env))
+            return true;
+        // else fall thru
 >>
 
 select_statement(s) ::= <<$(s.template)(s.args)$;>>

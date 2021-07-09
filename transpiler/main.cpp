@@ -2,7 +2,8 @@
 #include "ExprLexer.h"
 #include "ExprParser.h"
 #include "ParseListener.hpp"
-#include "Output.hpp"
+#include "outp/Output.hpp"
+#include "Transform.hpp"
 
 #include <iostream>
 #include <string>
@@ -132,9 +133,11 @@ int main(int argc, char* argv[])
         }
     }
 
-    OutputHeader(output_base_name).write(program);
-    OutputSource(output_base_name).write(program);
-    OutputDbInit(output_base_name).write(program);
+    outp::ProgramNamespace program_output = transform(program);
+
+    OutputHeader(output_base_name).write(program_output);
+    OutputSource(output_base_name).write(program_output);
+    OutputDbInit(output_base_name).write(program_output);
 
     std::cout << "Transpiler finished." << std::endl;
 

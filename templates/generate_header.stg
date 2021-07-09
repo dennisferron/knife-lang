@@ -33,7 +33,7 @@ public:
     $rel.name$($rel.vars:parm_lvar();separator=", "$);
     void reset();
 
-    bool step(Environment& env, int& var_counter);
+    bool number(Environment& env, int& var_counter);
 
     // TODO: Following is dummy function, remove:
     int run();

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ExprParserBaseListener.h"
-#include "Program.hpp"
+#include "lang/Program.hpp"
 
 class ParseListener : public ExprParserBaseListener
 {

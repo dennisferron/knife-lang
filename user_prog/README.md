@@ -69,7 +69,7 @@ control flow state is a mutable variable.
 
 When the relation expression object is
 constructed, it is not yet activated and must
-be advanced by calling the step function. This
+be advanced by calling the number function. This
 jumps to the corresponding case label in the
 "coroutine" switch and may change the value
 of the control flow state for next time.  A tree
