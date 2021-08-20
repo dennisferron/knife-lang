@@ -5,22 +5,19 @@
 
 #include <iostream>
 
+// This controls whether the hand-crafted example code
+// or the generated code is run by run_user_lib()
+//namespace DemoCode = Example;  // The hand-crafted code
+namespace DemoCode = user_prog;  // The generated code
+
 USER_LIB_EXPORT void run_user_lib()
 {
-    //user_prog p;
-    //p.run();
-
-    //ExampleRelation rel;
-
-    //while (rel.step())
-    //    std::cout << "Step\n";
-
     int var_counter = 0;
     lvar<Person> ans = { ++var_counter, "out: ans"};
     lvar<Person> des = { ++var_counter, "out: des"};
     Environment env = {};
 
-    Ancestor anc(ans, des);
+    DemoCode::Ancestor anc(ans, des);
 
     while (anc.step(env, var_counter))
     {

@@ -32,6 +32,7 @@ EXPR_LET : 'let';
 EXPR_FRESH : 'fresh';
 EXPR_RELATION : 'relation';
 EXPR_YIELD : 'yield';
+EXPR_MEMBER : 'member';
 
 EXPR_PLUS : '+';
 EXPR_MINUS : '-';

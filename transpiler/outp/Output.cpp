@@ -123,10 +123,51 @@ void Output::write(JsonArray& arr, outp::RelationClass const& relation)
     arr += [&](JsonObject o)
     {
         o["name"] = relation.name;
-        o["vars"] = [](JsonArray arr)
+        o["parm_lvars"] = [&](JsonArray arr)
         {
-            arr("p", "c");
+            for (auto v : relation.param_lvars)
+            {
+                arr += [&](JsonObject o)
+                {
+                    o["name"] = v.var_name;
+                    o["type"] = v.type;
+                };
+            }
         };
+        o["rslt_vars"] = [&](JsonArray arr)
+        {
+            for (auto v : relation.result_vars)
+            {
+                arr += [&](JsonObject o)
+                {
+                    o["name"] = v.var_name;
+                    o["type"] = v.type;
+                };
+            }
+        };
+        o["fresh_lvars"] = [&](JsonArray arr)
+        {
+            for (auto v : relation.fresh_lvars)
+            {
+                arr += [&](JsonObject o)
+                {
+                    o["name"] = v.var_name;
+                    o["type"] = v.type;
+                };
+            }
+        };
+        o["mbrs"] = [&](JsonArray arr)
+        {
+            for (auto mbr : relation.members)
+            {
+                arr += [&](JsonObject o)
+                {
+                    o["name"] = mbr.rel_name;
+                    o["type"] = mbr.rel_type;
+                };
+            }
+        };
+
         write_all_steps(o, relation.step_cases);
         //write_all_statements(o, relation.get_statements());
         o["statements"] = [&](JsonArray arr){};
@@ -144,23 +185,6 @@ void Output::write_all_relations(
     };
 }
 
-void Output::write(JsonArray& arr, outp::StepCase const& step)
-{
-    arr += [&](JsonObject o)
-    {
-        o["number"] = step.number;
-        o["next_step"] = step.number+1;
-        o["result"] = [&](JsonArray a)
-        {
-            // The initializer list for Result { ... };
-            for (auto const& data : step.result)
-            {
-                a += data;
-            }
-        };
-    };
-}
-
 void Output::write_all_steps(
         JsonObject& json,
         std::vector<outp::StepCase> const& steps)
@@ -169,6 +193,76 @@ void Output::write_all_steps(
     {
         for (auto const& s : steps)
             write(arr, s);
+    };
+}
+
+void Output::write(JsonArray& arr, outp::StepCase const& step)
+{
+    arr += [&](JsonObject o)
+    {
+        o["number"] = step.number;
+        o["next_step"] = step.number+1;
+
+        auto action = [&](auto const& s) mutable
+            { write_case_template(o, s); };
+        std::visit(action, step.case_template);
+    };
+}
+
+void Output::write_case_template(JsonObject& o, const outp::Case_SetResult& c)
+{
+    o["template"] = "case_set_result";
+    o["result"] = [&](JsonArray a)
+    {
+        // The initializer list for Result { ... };
+        for (auto const& data : c.result)
+        {
+            a += data;
+        }
+    };
+}
+
+void Output::write(JsonArray& arr, const outp::SubRel& s)
+{
+    arr += [&](JsonObject o)
+    {
+        o["rel_name"] = s.rel_name;
+        o["rel_type"] = s.rel_type;
+        o["rel_args"] = [&](JsonArray arr)
+        {
+            for (auto const& arg : s.rel_args)
+                arr += arg;
+        };
+    };
+}
+
+void Output::write(JsonArray& arr, const outp::FreshVar& v)
+{
+    arr += [&](JsonObject o)
+    {
+        o["var_name"] = v.var_name;
+    };
+}
+
+void Output::write_case_template(JsonObject& o, const outp::Case_InitSubRel& c)
+{
+    o["template"] = "case_init_sub_rel";
+    o["prev_rels"] = [&](JsonArray arr)
+    {
+        for (auto const& r : c.prev_rels)
+            write(arr, r);
+    };
+
+    o["fresh_vars"] = [&](JsonArray arr)
+    {
+        for (auto const& v : c.fresh_vars)
+            write(arr, v);
+    };
+
+    o["init_rels"] = [&](JsonArray arr)
+    {
+        for (auto const& r : c.init_rels)
+            write(arr, r);
     };
 }
 

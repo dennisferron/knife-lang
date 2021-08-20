@@ -15,10 +15,23 @@ relation Parent(p : Person, c : Person)
         ;
 }
 
-relation Ancestor(ans : Person, des : Person)
+relation Ancestor_0(ans : Person, des : Person)
+{
+    member parent = Parent(ans, des);
+    yield parent;
+}
+
+relation Ancestor_1(ans : Person, des : Person)
 {
     fresh x : Person;
-    yield Parent(ans, des)
-        | Parent(x, des) & Ancestor(ans, x)
-        ;
+    member parent = Parent(x, des);
+    member ancestor = Ancestor(ans, x);
+    yield parent & ancestor;
+}
+
+relation Ancestor(ans : Person, des : Person)
+{
+    member ancestor_0 = Ancestor_0(ans, des);
+    member ancestor_1 = Ancestor_1(ans, des);
+    yield ancestor_0 | ancestor_1;
 }

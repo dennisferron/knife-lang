@@ -7,9 +7,13 @@ header(projectNamespace, relations) ::= <<
 
 namespace $projectNamespace$
 {
-    $relations:decl_relation()$
+    $relations:fwd_decl_relation();separator="\n"$
+
+    $relations:decl_relation();separator="\n"$
 }  // namespace $projectNamespace$
 >>
+
+fwd_decl_relation(rel) ::= <<class $rel.name$;>>
 
 decl_relation(rel) ::= <<
 class $rel.name$
@@ -18,29 +22,34 @@ private:
     int next_step = 0;
     std::size_t checkpoint = 0;
 
-    $rel.vars:decl_lvar();separator="\n"$
+    $rel.parm_lvars:decl_lvar();separator="\n"$
+    $rel.fresh_lvars:decl_lvar();separator="\n"$
+    $rel.mbrs:decl_mbr();separator="\n"$
 
     struct Result
     {
-    	$rel.vars:decl_result_var();separator="\n"$
+    	$rel.rslt_vars:decl_result_var();separator="\n"$
     } cached_result;
-
-    std::ostream& print(std::ostream& os, int nesting);
 
     bool bind(Environment& env);
 
 public:
-    $rel.name$($rel.vars:parm_lvar();separator=", "$);
+    $rel.name$($rel.parm_lvars:parm_lvar();separator=", "$);
     void reset();
 
-    bool number(Environment& env, int& var_counter);
+    bool step(Environment& env, int& var_counter);
 
-    // TODO: Following is dummy function, remove:
-    int run();
+    std::ostream& print(std::ostream& os, int nesting);
 };
 >>
 
-decl_lvar(v) ::= <<lvar<Person> $v$;>>
-decl_result_var(v) ::= <<Person $v$;>>
+// This is used to declare both param (constructor) lvars
+// and fresh lvars in the relation class.
+decl_lvar(v) ::= <<lvar<$v.type$> $v.name$;>>
+decl_result_var(v) ::= <<$v.type$ $v.name$;>>
 
-parm_lvar(v) ::= <<lvar<Person> $v$>>
+decl_mbr(m) ::= <<$m.type$* $m.name$ = nullptr;>>
+
+// This is used for param lvars in the relation class
+// constructor args.
+parm_lvar(v) ::= <<lvar<$v.type$> $v.name$>>

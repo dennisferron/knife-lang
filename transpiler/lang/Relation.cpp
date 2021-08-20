@@ -17,6 +17,11 @@ namespace lang
         statements.push_back(stmt);
     }
 
+    void Relation::add_param(lang::ParamVar const& param)
+    {
+        params.push_back(param);
+    }
+
     const std::vector<Statement>& Relation::get_statements() const
     {
         return statements;

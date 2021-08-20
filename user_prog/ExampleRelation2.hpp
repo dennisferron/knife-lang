@@ -10,6 +10,9 @@
 #include <cassert>
 #include <vector>
 
+namespace Example
+{
+
 class Parent
 {
 private:
@@ -135,3 +138,5 @@ public:
         return os;
     }
 };
+
+}

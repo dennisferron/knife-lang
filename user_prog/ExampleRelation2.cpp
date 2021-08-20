@@ -1,5 +1,7 @@
 #include "ExampleRelation2.hpp"
 
+using namespace Example;
+
 std::ostream& Parent::print(std::ostream& os, int nesting)
 {
     return print_tabs(os, nesting) << "Parent("

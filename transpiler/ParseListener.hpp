@@ -18,10 +18,12 @@ public:
     void enterQuasiQuoteCsv(ExprParser::QuasiQuoteCsvContext* ctx) override;
 
     void enterRelation_name(ExprParser::Relation_nameContext* ctx) override;
+    void enterRelation_param(ExprParser::Relation_paramContext* ctx) override;
 
     virtual void enterLet_stmt(ExprParser::Let_stmtContext* ctx) override;
     virtual void enterFresh_stmt(ExprParser::Fresh_stmtContext* ctx) override;
     virtual void enterYield_stmt(ExprParser::Yield_stmtContext* ctx) override;
+    virtual void enterMember_stmt(ExprParser::Member_stmtContext* ctx) override;
 };
 
 

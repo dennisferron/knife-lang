@@ -1,23 +1,33 @@
 #pragma once
 
 #include <variant>
+#include <string>
+#include <vector>
 
 namespace lang
 {
-    class LetStatement
+    struct LetStatement
     {
     };
 
-    class FreshStatement
+    struct FreshStatement
     {
     };
 
-    class YieldStatement
+    struct YieldStatement
     {
+    };
+
+    struct MemberStatement
+    {
+        std::string name;
+        std::string type;
+        std::vector<std::string> args;
     };
 
     using Statement = std::variant<
             LetStatement,
             FreshStatement,
-            YieldStatement>;
+            YieldStatement,
+            MemberStatement>;
 }

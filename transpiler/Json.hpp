@@ -69,6 +69,14 @@ protected:
     {
         auto& os = get_stream();
 
+        static_assert(!(std::is_invocable_v<T, JsonObject&>
+        && !std::is_invocable_v<T, JsonObject>),
+                "Lambda must take JsonObject by value, not by reference.");
+
+        static_assert(!(std::is_invocable_v<T, JsonArray&>
+        && !std::is_invocable_v<T, JsonArray>),
+                "Lambda must take JsonArray by value, not by reference.");
+
         if constexpr(std::is_invocable_v<T, JsonObject>)
         {
             os << "{";
@@ -109,7 +117,7 @@ public:
     int num_lines() const { return printer.num_lines(); }
 };
 
-class JsonAttribute : public JsonPrinterBase
+class JsonAttribute : private JsonPrinterBase
 {
 public:
     explicit JsonAttribute(JsonPrinter& printer)
@@ -121,11 +129,19 @@ public:
     template <typename T>
     void operator =(T const& value)
     {
+        static_assert(!(std::is_invocable_v<T, JsonObject&>
+        && !std::is_invocable_v<T, JsonObject>),
+                "Lambda must take JsonObject by value, not by reference.");
+
+        static_assert(!(std::is_invocable_v<T, JsonArray&>
+        && !std::is_invocable_v<T, JsonArray>),
+                "Lambda must take JsonArray by value, not by reference.");
+
         print_child<T>(value);
     }
 };
 
-class JsonObject : public JsonPrinterBase
+class JsonObject : private JsonPrinterBase
 {
 private:
     bool needs_comma = false;
@@ -150,7 +166,7 @@ public:
     }
 };
 
-class JsonArray : public JsonPrinterBase
+class JsonArray : private JsonPrinterBase
 {
 private:
     bool needs_comma = false;
@@ -182,6 +198,14 @@ public:
     template <typename T>
     JsonArray& operator +=(T const& value)
     {
+        static_assert(!(std::is_invocable_v<T, JsonObject&>
+        && !std::is_invocable_v<T, JsonObject>),
+                "Lambda must take JsonObject by value, not by reference.");
+
+        static_assert(!(std::is_invocable_v<T, JsonArray&>
+        && !std::is_invocable_v<T, JsonArray>),
+                "Lambda must take JsonArray by value, not by reference.");
+
         auto& os = get_stream();
 
         if (needs_comma)

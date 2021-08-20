@@ -41,6 +41,7 @@ stat: (
         let_stmt
     |   fresh_stmt
     |   yield_stmt
+    |   member_stmt
     |   expr2
     |   EXPR_ID EXPR_ASGN expr2
     ) EXPR_SEMICOLON
@@ -49,6 +50,9 @@ stat: (
 let_stmt: EXPR_LET EXPR_ID type_annotation? EXPR_ASGN expr2;
 fresh_stmt: EXPR_FRESH EXPR_ID type_annotation?;
 yield_stmt: EXPR_YIELD expr2;
+member_stmt: EXPR_MEMBER member_name=EXPR_ID
+    EXPR_ASGN member_type=EXPR_ID
+        EXPR_OPEN_PAR call_param_list EXPR_CLOSE_PAR;
 
 type_annotation: EXPR_COLON EXPR_ID;
 

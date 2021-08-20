@@ -20,18 +20,16 @@ protected:
         JsonObject& json,
         std::vector<outp::RelationClass> const& relations);
 
+    void write(JsonArray& arr, const outp::SubRel& s);
+    void write(JsonArray& arr, const outp::FreshVar& v);
+
     void write(JsonArray& arr, outp::StepCase const& step);
     void write_all_steps(
         JsonObject& json,
         std::vector<outp::StepCase> const& steps);
 
-//    void write_all_statements(
-//            JsonObject& json,
-//            std::vector<lang::Statement> const& statements);
-//
-//    void write_statement(JsonArray& arr, lang::LetStatement const& statement);
-//    void write_statement(JsonArray& arr, lang::FreshStatement const& statement);
-//    void write_statement(JsonArray& arr, lang::YieldStatement const& statement);
+    void write_case_template(JsonObject& o, outp::Case_SetResult const& c);
+    void write_case_template(JsonObject& o, outp::Case_InitSubRel const& c);
 
 public:
     ~Output();

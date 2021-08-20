@@ -1,0 +1,72 @@
+// Here outer is an "or" and inner is an "and" on second disjunction.
+bool Ancestor::step(Environment& env, int& var_counter)
+{
+    switch (next_step)
+    {
+		// One-time initialization (step_case template: init_subrel)
+        case 0:		// case $step.number$:  /* template can start after case line which is always thus */
+            parent_0 = new Parent(ans, des);	// $step.sub_rel.var_name$ = new $step.sub_rel.rel_class$(vars)$;
+
+			// housekeeping
+            next_step = 1;	// next_step = $step.next_step$;
+			// fall-through
+			
+		// Jump directly here on subsequent visits (step_case template: eval_subrel)
+        case 1:		// case $step.number$:
+            if (parent_0->step(env, var_counter))  // if ($step.sub_rel.var_name$->step(env, var_counter))
+                return true;
+            else
+                next_step = 2;
+				// fall through
+			
+		// One-time init of second disj, also requiring clear last rel and create fresh var
+        case 2:
+		
+			// clear previous sub_rel(s). This section is context cleanup for state transition.
+            delete parent_0;
+            parent_0 = nullptr;
+			
+			// fresh var needed for the initialization of next sub-rels.
+			// Technically this statement occurs outside the disj but needed here.
+            x = { ++var_counter, "x" };
+
+			// init next set of sub-rels
+            parent_1 = new Parent(x, des);
+            ancestor_1 = new Ancestor(ans, x);
+
+            next_step = 3;
+
+		// Evaluate/step second sub_rel in disjunction.
+        case 3:
+			// Loop starts a conjunction, which can use same switch cases as outer disjunction.
+			// The template itself needs to be "recursive" for inner conjunctand(s) between braces.
+            while (parent_1->step(env, var_counter))
+            {
+                case 4:;  // This step-case is an indirect child of case 3, but must continue numbering.
+                if (ancestor_1->step(env, var_counter)) // may use while instead of if, for consistency
+                {
+                    next_step = 4;  // On next step jump to case 4 so only inner conjunctand is stepped.
+                    return true;
+                }
+                ancestor_1->reset();  // Restart inner conjunctand before looping and stepping outer.
+            }
+            next_step = 5;  // This line is not needed for last case, but may be part of step-case template
+
+        default:			// Default case takes care of ending the stepping (whether disj or conj).
+            next_step = -1;	// After failing once, return fail forever.
+            return false;
+    }
+}
+
+
+// conjunction template 
+	while ($sub_rel$->step(env, var_counter))
+	{
+		case 4:;  // This step-case is an indirect child of case 3, but must continue numbering.
+		if (ancestor_1->step(env, var_counter)) // may use while instead of if, for consistency
+		{
+			next_step = 4;  // On next step jump to case 4 so only inner conjunctand is stepped.
+			return true;
+		}
+		ancestor_1->reset();  // Restart inner conjunctand before looping and stepping outer.
+	}
