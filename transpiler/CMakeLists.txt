@@ -29,8 +29,8 @@ add_custom_command(
         COMMENT "Running ANTLR4 (Java) to generate the Expr parser."
 )
 
-add_executable(transpiler main.cpp ${EXPR_LEXER_OUTPUTS} ${EXPR_PARSER_OUTPUTS} ${SUBST_GEN_OUTPUTS} ParseListener.cpp ParseListener.hpp lang/Relation.cpp lang/Relation.hpp lang/Program.cpp lang/Program.hpp Json.cpp Json.hpp outp/Output.cpp outp/Output.hpp lang/Statement.cpp lang/Statement.hpp outp/StepCase.cpp outp/StepCase.hpp outp/RelationClass.cpp outp/RelationClass.hpp outp/ProgramNamespace.cpp outp/ProgramNamespace.hpp Transform.cpp Transform.hpp)
-target_link_libraries(transpiler antlr4_static)
+add_executable(transpiler main.cpp ${EXPR_LEXER_OUTPUTS} ${EXPR_PARSER_OUTPUTS} ${SUBST_GEN_OUTPUTS} ParseListener.cpp ParseListener.hpp lang/Relation.cpp lang/Relation.hpp lang/Program.cpp lang/Program.hpp Json.cpp Json.hpp outp/Output.cpp outp/Output.hpp lang/Statement.cpp lang/Statement.hpp outp/StepCase.cpp outp/StepCase.hpp outp/RelationClass.cpp outp/RelationClass.hpp outp/ProgramNamespace.cpp outp/ProgramNamespace.hpp Transform.cpp Transform.hpp lang/Expression.cpp lang/Expression.hpp data/LogDatabase.cpp data/LogDatabase.hpp)
+target_link_libraries(transpiler antlr4_static sqlite_lib)
 
 target_include_directories(transpiler
         PRIVATE ${CMAKE_CURRENT_BINARY_DIR}

@@ -4,6 +4,7 @@
 #include "ParseListener.hpp"
 #include "outp/Output.hpp"
 #include "Transform.hpp"
+#include "data/LogDatabase.hpp"
 
 #include <iostream>
 #include <string>
@@ -86,6 +87,9 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    std::string compile_log_file = output_base_name + "-compile.db";
+    data::LogDatabase db(compile_log_file);
+
     // Information gleaned by the parse listener on all
     // of the input files will be accumulated in this object.
     lang::Program program;
@@ -109,11 +113,17 @@ int main(int argc, char* argv[])
 
         antlr4::CommonTokenStream expr_tokens(&expr_lexer);
 
-        //    expr_tokens.fill();
-        //    for (auto expr_token : expr_tokens.getTokens())
-        //    {
-        //        std::cout << expr_token->toString() << std::endl;
-        //    }
+        data::TokenInserter tok_ins(db);
+        db.begin_transaction();
+
+        expr_tokens.fill();
+        for (auto expr_token : expr_tokens.getTokens())
+        {
+            std::cout << expr_token->toString() << std::endl;
+            tok_ins.insert(expr_token);
+        }
+
+        db.commit_transaction();
 
         ExprParser expr_parser(&expr_tokens);
         antlr4::tree::ParseTree* expr_tree = expr_parser.prog();
