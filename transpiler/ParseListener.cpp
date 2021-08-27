@@ -1,13 +1,13 @@
 #include "ParseListener.hpp"
 
-ParseListener::ParseListener(ExprParser* parser, lang::Program* program)
-    : parser(parser), program(program)
+ParseListener::ParseListener(ExprParser* parser, lang::Program* program, data::ParserRuleContextInserter* ctx_inserter)
+    : parser(parser), program(program), ctx_inserter(ctx_inserter)
 {
 }
 
 void ParseListener::enterEveryRule(antlr4::ParserRuleContext* ctx)
 {
-
+    ctx_inserter->insert(ctx);
 }
 
 void ParseListener::enterSql_stmt_list(ExprParser::Sql_stmt_listContext *ctx)

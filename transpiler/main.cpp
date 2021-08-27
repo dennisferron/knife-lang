@@ -150,8 +150,10 @@ int main(int argc, char* argv[])
         expr_parser.removeErrorListeners(); // remove ConsoleErrorListener
         expr_parser.addErrorListener(&expr_error_listener);
 
+        data::ParserRuleContextInserter prc_ctx(db);
+        ParseListener listener(&expr_parser, &program, &prc_ctx);
+
         antlr4::tree::ParseTreeWalker walker;
-        ParseListener listener(&expr_parser, &program);
         walker.walk(&listener, expr_tree); // initiate walk of tree with listener
 
         if (auto errs = expr_parser.getNumberOfSyntaxErrors())

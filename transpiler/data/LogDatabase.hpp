@@ -18,6 +18,7 @@ namespace data
 
         friend class TokenInserter;
         friend class TokenNamesInserter;
+        friend class ParserRuleContextInserter;
 
     public:
         LogDatabase(std::string db_file);
@@ -48,5 +49,16 @@ namespace data
         TokenInserter(LogDatabase const& db);
         ~TokenInserter();
         void insert(antlr4::Token* token);
+    };
+
+    class ParserRuleContextInserter
+    {
+    private:
+        sqlite3_stmt* stmt = nullptr;
+
+    public:
+        ParserRuleContextInserter(LogDatabase const& db);
+        ~ParserRuleContextInserter();
+        void insert(antlr4::ParserRuleContext* ctx);
     };
 }

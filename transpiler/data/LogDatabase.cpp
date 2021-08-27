@@ -92,6 +92,7 @@ void LogDatabase::create_tables()
     exec(R"(
         CREATE TABLE ParserRuleContext (
             address    INTEGER PRIMARY KEY,
+            parent     INTEGER,
             startToken INTEGER,
             stopToken  INTEGER
         );
@@ -175,6 +176,46 @@ void TokenInserter::insert(antlr4::Token* token)
 
     sqlite3_bind_int64(stmt, 6, token->getLine());
     sqlite3_bind_int64(stmt, 7, token->getCharPositionInLine());
+
+    sqlite3_step(stmt);
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
+}
+
+
+
+ParserRuleContextInserter::ParserRuleContextInserter(const LogDatabase& db)
+{
+    char const* insert_sql = R"(
+        insert into ParserRuleContext (
+            address, parent,
+            startToken, stopToken
+        )
+    values (?, ?, ?, ?))";
+
+    int rc = sqlite3_prepare_v2(db.db, insert_sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+    {
+        std::stringstream msg;
+        msg << "Error preparing statement "
+        << insert_sql << " Message: "
+        << sqlite3_errmsg(db.db) << "\n";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+ParserRuleContextInserter::~ParserRuleContextInserter()
+{
+    sqlite3_finalize(stmt);
+}
+
+void ParserRuleContextInserter::insert(antlr4::ParserRuleContext* ctx)
+{
+    sqlite3_bind_int64(stmt, 1, reinterpret_cast<sqlite3_int64>(ctx));
+    sqlite3_bind_int64(stmt, 2, reinterpret_cast<sqlite3_int64>(ctx->parent));
+    sqlite3_bind_int64(stmt, 3, ctx->getStart()->getTokenIndex());
+    sqlite3_bind_int64(stmt, 4, ctx->getStop()->getTokenIndex());
 
     sqlite3_step(stmt);
 

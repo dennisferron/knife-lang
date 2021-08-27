@@ -3,6 +3,7 @@
 #include "ExprParserBaseListener.h"
 #include "lang/Program.hpp"
 #include "lang/Expression.hpp"
+#include "data/LogDatabase.hpp"
 
 #include <stack>
 
@@ -11,6 +12,8 @@ class ParseListener : public ExprParserBaseListener
 private:
     ExprParser* parser;
     lang::Program* program;
+    data::ParserRuleContextInserter* ctx_inserter;
+
     std::vector<lang::Expression const*> expr_stack;
 
     lang::Expression const* pop_expr();
@@ -19,7 +22,7 @@ private:
     void print_stack(std::ostream& os);
 
 public:
-    ParseListener(ExprParser* parser, lang::Program* program);
+    ParseListener(ExprParser* parser, lang::Program* program, data::ParserRuleContextInserter* ctx_inserter);
 
     virtual void enterEveryRule(antlr4::ParserRuleContext* ctx) override;
 
