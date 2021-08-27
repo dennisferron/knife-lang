@@ -94,6 +94,8 @@ int main(int argc, char* argv[])
     // of the input files will be accumulated in this object.
     lang::Program program;
 
+    bool need_save_token_names = true;
+
     for (std::string expr_file : input_files)
     {
         antlr4::ANTLRFileStream expr_strm(expr_file);
@@ -106,6 +108,22 @@ int main(int argc, char* argv[])
         }
 
         ExprLexer expr_lexer(&expr_strm);
+
+        if (need_save_token_names)
+        {
+            data::TokenNamesInserter tokenNamesInserter(db);
+            db.begin_transaction();
+            auto const& tok_names = expr_lexer.getTokenNames();
+
+            for (std::size_t i=0; i<tok_names.size(); i++)
+            {
+                std::string name = tok_names[i];
+                tokenNamesInserter.insert(i, name);
+            }
+
+            db.commit_transaction();
+            need_save_token_names = false;
+        }
 
         CerrErrorListener expr_error_listener;
         expr_lexer.removeErrorListeners();

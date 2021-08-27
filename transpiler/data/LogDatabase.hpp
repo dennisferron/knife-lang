@@ -17,6 +17,7 @@ namespace data
         void create_tables();
 
         friend class TokenInserter;
+        friend class TokenNamesInserter;
 
     public:
         LogDatabase(std::string db_file);
@@ -25,6 +26,17 @@ namespace data
         void begin_transaction();
         void commit_transaction();
         void rollback_transaction();
+    };
+
+    class TokenNamesInserter
+    {
+    private:
+        sqlite3_stmt* stmt = nullptr;
+
+    public:
+        TokenNamesInserter(LogDatabase const& db);
+        ~TokenNamesInserter();
+        void insert(std::size_t tokenType, std::string tokenName);
     };
 
     class TokenInserter

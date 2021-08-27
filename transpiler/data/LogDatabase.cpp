@@ -67,6 +67,27 @@ void LogDatabase::exec(std::string sql)
 
 void LogDatabase::create_tables()
 {
+    exec("DROP TABLE IF EXISTS TokenTypeNames;");
+    exec(R"(
+        CREATE TABLE TokenTypeNames (
+            tokenType INTEGER PRIMARY KEY,
+            tokenName TEXT
+        );
+    )");
+
+    exec("DROP TABLE IF EXISTS Tokens;");
+    exec(R"(
+        CREATE TABLE IF NOT EXISTS Tokens (
+            tokenIndex     INTEGER PRIMARY KEY,
+            start          INTEGER,
+            stop           INTEGER,
+            tokenText      TEXT,
+            tokenType      INTEGER,
+            line           INTEGER,
+            positionInLine TEXT
+        );
+    )");
+
     exec("DROP TABLE IF EXISTS ParserRuleContext;");
     exec(R"(
         CREATE TABLE ParserRuleContext (
@@ -75,22 +96,55 @@ void LogDatabase::create_tables()
             stopToken  INTEGER
         );
     )");
-
-    exec("DROP TABLE IF EXISTS Tokens;");
-    exec(R"(
-        CREATE TABLE IF NOT EXISTS Tokens (
-            tokenIndex     INTEGER PRIMARY KEY,
-            line           INTEGER,
-            positionInLine TEXT
-        );
-    )");
 }
+
+
+
+TokenNamesInserter::TokenNamesInserter(const LogDatabase& db)
+{
+    char const* insert_sql = R"(
+        insert into TokenTypeNames (
+            tokenType, tokenName)
+        values (?, ?))";
+
+    int rc = sqlite3_prepare_v2(db.db, insert_sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+    {
+        std::stringstream msg;
+        msg << "Error preparing statement "
+        << insert_sql << " Message: "
+        << sqlite3_errmsg(db.db) << "\n";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+TokenNamesInserter::~TokenNamesInserter()
+{
+    sqlite3_finalize(stmt);
+}
+
+void TokenNamesInserter::insert(std::size_t tokenType, std::string tokenName)
+{
+    sqlite3_bind_int64(stmt, 1, tokenType);
+    sqlite3_bind_text(stmt, 2, tokenName.c_str(), tokenName.size(), SQLITE_TRANSIENT);
+
+    sqlite3_step(stmt);
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
+}
+
+
 
 TokenInserter::TokenInserter(const LogDatabase& db)
 {
     char const* insert_sql = R"(
-        insert into Tokens (tokenIndex, line, positionInLine)
-        values (?, ?, ?))";
+        insert into Tokens (
+            tokenIndex,
+            start, stop,
+            tokenText, tokenType,
+            line, positionInLine)
+        values (?, ?, ?, ?, ?, ?, ?))";
 
     int rc = sqlite3_prepare_v2(db.db, insert_sql, -1, &stmt, nullptr);
     if (rc != SQLITE_OK)
@@ -111,8 +165,16 @@ TokenInserter::~TokenInserter()
 void TokenInserter::insert(antlr4::Token* token)
 {
     sqlite3_bind_int64(stmt, 1, token->getTokenIndex());
-    sqlite3_bind_int64(stmt, 2, token->getLine());
-    sqlite3_bind_int64(stmt, 3, token->getCharPositionInLine());
+    sqlite3_bind_int64(stmt, 2, token->getStartIndex());
+    sqlite3_bind_int64(stmt, 3, token->getStopIndex());
+
+    std::string tok_text = token->getText();
+    sqlite3_bind_text(stmt, 4, tok_text.c_str(), tok_text.size(), SQLITE_TRANSIENT);
+
+    sqlite3_bind_int64(stmt, 5, token->getType());
+
+    sqlite3_bind_int64(stmt, 6, token->getLine());
+    sqlite3_bind_int64(stmt, 7, token->getCharPositionInLine());
 
     sqlite3_step(stmt);
 
