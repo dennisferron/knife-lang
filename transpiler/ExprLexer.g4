@@ -84,6 +84,8 @@ CSV_WS  :   [ \t]+ -> skip ; // toss out whitespace
 mode SQLITE;
 
 SQL_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
+SQL_ANYTHING : .+?;
+
 SQL_SEMICOL: ';';
 SQL_DOT: '.';
 SQL_OPEN_PAR: '(';

@@ -6,25 +6,31 @@
 #include "data/LogDatabase.hpp"
 
 #include <stack>
+#include <map>
 
 class ParseListener : public ExprParserBaseListener
 {
 private:
     ExprParser* parser;
     lang::Program* program;
-    data::ParserRuleContextInserter* ctx_inserter;
+    data::LogDatabase* log_database;
 
-    std::vector<lang::Expression const*> expr_stack;
+    std::map<
+        antlr4::tree::ParseTree const*,
+        lang::Expression const*
+    > expr_map;
 
-    lang::Expression const* pop_expr();
-    void push_expr(lang::Expression const* expr);
-    void push_binop(std::string op);
-    void print_stack(std::ostream& os);
+    lang::Expression const* get_expr(antlr4::tree::ParseTree* ctx);
+    void put_expr(lang::Expression const* expr,
+                  antlr4::ParserRuleContext* ctx);
+    void put_binop(std::string op, antlr4::ParserRuleContext* ctx);
+    void print_exprs(std::ostream& os);
 
 public:
-    ParseListener(ExprParser* parser, lang::Program* program, data::ParserRuleContextInserter* ctx_inserter);
+    ParseListener(ExprParser* parser, lang::Program* program, data::LogDatabase* log_database);
 
     virtual void enterEveryRule(antlr4::ParserRuleContext* ctx) override;
+    virtual void exitStat(ExprParser::StatContext * /*ctx*/) override;
 
     void enterSql_stmt_list(ExprParser::Sql_stmt_listContext *ctx) override;
 
@@ -37,7 +43,8 @@ public:
     virtual void enterLet_stmt(ExprParser::Let_stmtContext* ctx) override;
     virtual void enterFresh_stmt(ExprParser::Fresh_stmtContext* ctx) override;
     virtual void enterYield_stmt(ExprParser::Yield_stmtContext* ctx) override;
-    virtual void enterMember_stmt(ExprParser::Member_stmtContext* ctx) override;
+
+    virtual void exitMember_stmt(ExprParser::Member_stmtContext* ctx) override;
 
     virtual void exitDotExpr(ExprParser::DotExprContext* ctx) override;
     virtual void exitIntExpr(ExprParser::IntExprContext* ctx) override;
@@ -47,7 +54,7 @@ public:
     virtual void exitCallExpr(ExprParser::CallExprContext* ctx) override;
     virtual void exitParenExpr(ExprParser::ParenExprContext* ctx) override;
     virtual void exitIdExpr(ExprParser::IdExprContext* ctx) override;
-
+    virtual void exitExpr_identifier(ExprParser::Expr_identifierContext * ctx) override;
 };
 
 

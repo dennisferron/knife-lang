@@ -20,10 +20,14 @@ LogDatabase::LogDatabase(std::string db_file)
     }
 
     create_tables();
+    prepare_statements();
 }
 
 LogDatabase::~LogDatabase()
 {
+    sqlite3_finalize(stmt_insert_token_names);
+    sqlite3_finalize(stmt_insert_token);
+    sqlite3_finalize(stmt_insert_parse_context);
     sqlite3_close(db);
 }
 
@@ -65,6 +69,25 @@ void LogDatabase::exec(std::string sql)
     }
 }
 
+sqlite3_stmt* LogDatabase::prepare(const char* sql)
+{
+    sqlite3_stmt* result = nullptr;
+
+    int rc = sqlite3_prepare_v2(db, sql, -1, &result, nullptr);
+    if (rc != SQLITE_OK)
+    {
+        std::stringstream msg;
+        msg << "Error preparing statement "
+        << sql << " Message: "
+        << sqlite3_errmsg(db) << "\n";
+        throw std::runtime_error(msg.str());
+    }
+    else
+    {
+        return result;
+    }
+}
+
 void LogDatabase::create_tables()
 {
     exec("DROP TABLE IF EXISTS TokenTypeNames;");
@@ -72,6 +95,14 @@ void LogDatabase::create_tables()
         CREATE TABLE TokenTypeNames (
             tokenType INTEGER PRIMARY KEY,
             tokenName TEXT
+        );
+    )");
+
+    exec("DROP TABLE IF EXISTS RuleNames;");
+    exec(R"(
+        CREATE TABLE RuleNames (
+            ruleIndex INTEGER PRIMARY KEY,
+            ruleName TEXT
         );
     )");
 
@@ -94,40 +125,108 @@ void LogDatabase::create_tables()
             address    INTEGER PRIMARY KEY,
             parent     INTEGER,
             startToken INTEGER,
-            stopToken  INTEGER
+            stopToken  INTEGER,
+            ruleIndex  INTEGER
         );
+    )");
+
+    exec("DROP TABLE IF EXISTS Expressions;");
+    exec(R"(
+        CREATE TABLE Expressions (
+            address      INTEGER,
+            parent       INTEGER,
+            parseContext INTEGER,
+            description  TEXT
+        );
+    )");
+
+    exec("DROP TABLE IF EXISTS ExprStack;");
+    exec(R"(
+        CREATE TABLE ExprStack (
+            pushExpr   INTEGER,
+            numPopped  INTEGER,
+            generation INTEGER
+        );
+    )");
+
+    exec(R"(
+    CREATE VIEW IF NOT EXISTS ExpressionsView AS
+        SELECT tk.line,
+               rn.ruleName,
+               e.description
+          FROM Expressions e
+               JOIN
+               ParserRuleContext c ON e.parseContext == c.address
+               JOIN
+               RuleNames rn ON rn.ruleIndex == c.ruleIndex
+               JOIN
+               Tokens tk ON tk.tokenIndex == c.startToken;
     )");
 }
 
-
-
-TokenNamesInserter::TokenNamesInserter(const LogDatabase& db)
+void LogDatabase::prepare_statements()
 {
-    char const* insert_sql = R"(
+    stmt_insert_token_names = prepare(R"(
         insert into TokenTypeNames (
             tokenType, tokenName)
-        values (?, ?))";
+        values (?, ?)
+    )");
 
-    int rc = sqlite3_prepare_v2(db.db, insert_sql, -1, &stmt, nullptr);
-    if (rc != SQLITE_OK)
-    {
-        std::stringstream msg;
-        msg << "Error preparing statement "
-        << insert_sql << " Message: "
-        << sqlite3_errmsg(db.db) << "\n";
-        throw std::runtime_error(msg.str());
-    }
+    stmt_insert_rule_names = prepare(R"(
+        insert into RuleNames (
+            ruleIndex, ruleName)
+        values (?, ?)
+    )");
+
+    stmt_insert_token = prepare(R"(
+        insert into Tokens (
+            tokenIndex,
+            start, stop,
+            tokenText, tokenType,
+            line, positionInLine)
+        values (?, ?, ?, ?, ?, ?, ?)
+    )");
+
+    stmt_insert_parse_context = prepare(R"(
+        insert into ParserRuleContext (
+            address, parent,
+            startToken, stopToken,
+            ruleIndex
+        )
+        values (?, ?, ?, ?, ?)
+    )");
+
+    stmt_insert_expression = prepare(R"(
+        insert into Expressions (
+            address,
+            parseContext, description
+        )
+        values (?, ?, ?)
+    )");
+
+    stmt_update_expression_parent = prepare(R"(
+        update Expressions
+            set parent = ?
+            where address = ?
+    )");
+
+    stmt_insert_expr_stack = prepare(R"(
+        insert into ExprStack (
+            pushExpr,
+            numPopped,
+            generation
+        )
+        values (?, ?, ?)
+    )");
 }
 
-TokenNamesInserter::~TokenNamesInserter()
+void LogDatabase::insert_token_name(std::size_t tokenType, std::string tokenName)
 {
-    sqlite3_finalize(stmt);
-}
+    auto stmt = stmt_insert_token_names;
 
-void TokenNamesInserter::insert(std::size_t tokenType, std::string tokenName)
-{
     sqlite3_bind_int64(stmt, 1, tokenType);
-    sqlite3_bind_text(stmt, 2, tokenName.c_str(), tokenName.size(), SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, tokenName.c_str(),
+                      tokenName.size(), SQLITE_TRANSIENT);
 
     sqlite3_step(stmt);
 
@@ -135,36 +234,24 @@ void TokenNamesInserter::insert(std::size_t tokenType, std::string tokenName)
     sqlite3_reset(stmt);
 }
 
-
-
-TokenInserter::TokenInserter(const LogDatabase& db)
+void LogDatabase::insert_rule_name(std::size_t rule_index, std::string rule_name)
 {
-    char const* insert_sql = R"(
-        insert into Tokens (
-            tokenIndex,
-            start, stop,
-            tokenText, tokenType,
-            line, positionInLine)
-        values (?, ?, ?, ?, ?, ?, ?))";
+    auto stmt = stmt_insert_rule_names;
 
-    int rc = sqlite3_prepare_v2(db.db, insert_sql, -1, &stmt, nullptr);
-    if (rc != SQLITE_OK)
-    {
-        std::stringstream msg;
-        msg << "Error preparing statement "
-        << insert_sql << " Message: "
-        << sqlite3_errmsg(db.db) << "\n";
-        throw std::runtime_error(msg.str());
-    }
+    sqlite3_bind_int64(stmt, 1, rule_index);
+    sqlite3_bind_text(stmt, 2, rule_name.c_str(),
+                      rule_name.size(), SQLITE_TRANSIENT);
+
+    sqlite3_step(stmt);
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
 }
 
-TokenInserter::~TokenInserter()
+void LogDatabase::insert_token(antlr4::Token* token)
 {
-    sqlite3_finalize(stmt);
-}
+    auto stmt = stmt_insert_token;
 
-void TokenInserter::insert(antlr4::Token* token)
-{
     sqlite3_bind_int64(stmt, 1, token->getTokenIndex());
     sqlite3_bind_int64(stmt, 2, token->getStartIndex());
     sqlite3_bind_int64(stmt, 3, token->getStopIndex());
@@ -183,39 +270,65 @@ void TokenInserter::insert(antlr4::Token* token)
     sqlite3_reset(stmt);
 }
 
-
-
-ParserRuleContextInserter::ParserRuleContextInserter(const LogDatabase& db)
+void LogDatabase::insert_parse_context(antlr4::ParserRuleContext* ctx)
 {
-    char const* insert_sql = R"(
-        insert into ParserRuleContext (
-            address, parent,
-            startToken, stopToken
-        )
-    values (?, ?, ?, ?))";
+    auto stmt = stmt_insert_parse_context;
 
-    int rc = sqlite3_prepare_v2(db.db, insert_sql, -1, &stmt, nullptr);
-    if (rc != SQLITE_OK)
-    {
-        std::stringstream msg;
-        msg << "Error preparing statement "
-        << insert_sql << " Message: "
-        << sqlite3_errmsg(db.db) << "\n";
-        throw std::runtime_error(msg.str());
-    }
-}
-
-ParserRuleContextInserter::~ParserRuleContextInserter()
-{
-    sqlite3_finalize(stmt);
-}
-
-void ParserRuleContextInserter::insert(antlr4::ParserRuleContext* ctx)
-{
     sqlite3_bind_int64(stmt, 1, reinterpret_cast<sqlite3_int64>(ctx));
     sqlite3_bind_int64(stmt, 2, reinterpret_cast<sqlite3_int64>(ctx->parent));
     sqlite3_bind_int64(stmt, 3, ctx->getStart()->getTokenIndex());
     sqlite3_bind_int64(stmt, 4, ctx->getStop()->getTokenIndex());
+    sqlite3_bind_int64(stmt, 5, ctx->getRuleIndex());
+
+    sqlite3_step(stmt);
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
+}
+
+void LogDatabase::insert_expression(lang::Expression const* expr, antlr4::ParserRuleContext const* ctx)
+{
+    auto stmt = stmt_insert_expression;
+
+    sqlite3_bind_int64(stmt, 1,
+                       reinterpret_cast<sqlite3_int64>(expr));
+
+    sqlite3_bind_int64(stmt, 2,
+                       reinterpret_cast<sqlite3_int64>(ctx));
+
+    std::stringstream desc; desc << *expr;
+    sqlite3_bind_text(stmt, 3, desc.str().c_str(),
+                     desc.str().size(), SQLITE_TRANSIENT);
+
+    sqlite3_step(stmt);
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
+}
+
+void LogDatabase::update_expression_parent(lang::Expression const* expr, lang::Expression const* parent)
+{
+    auto stmt = stmt_update_expression_parent;
+
+    sqlite3_bind_int64(stmt, 1,
+                       reinterpret_cast<sqlite3_int64>(parent));
+    sqlite3_bind_int64(stmt, 2,
+                       reinterpret_cast<sqlite3_int64>(expr));
+
+    sqlite3_step(stmt);
+
+    sqlite3_clear_bindings(stmt);
+    sqlite3_reset(stmt);
+}
+
+void LogDatabase::insert_stack(lang::Expression const* pushExpr, std::size_t numPopped, int generation)
+{
+    auto stmt = stmt_insert_expr_stack;
+
+    sqlite3_bind_int64(stmt, 1,
+                       reinterpret_cast<sqlite3_int64>(pushExpr));
+    sqlite3_bind_int64(stmt, 2, numPopped);
+    sqlite3_bind_int64(stmt, 3, generation);
 
     sqlite3_step(stmt);
 

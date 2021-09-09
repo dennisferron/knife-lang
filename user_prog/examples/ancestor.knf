@@ -1,3 +1,10 @@
+relation TestSql(x : T)
+{
+    let foo = {| SQL
+        select * from tbl;
+    |};
+}
+
 relation Parent(p : Person, c : Person)
 {
     let mothers = {| CSV(p, c)

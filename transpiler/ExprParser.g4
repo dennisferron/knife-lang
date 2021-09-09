@@ -50,21 +50,23 @@ stat: (
 let_stmt: EXPR_LET EXPR_ID type_annotation? EXPR_ASGN expr_expr;
 fresh_stmt: EXPR_FRESH EXPR_ID type_annotation?;
 yield_stmt: EXPR_YIELD expr_expr;
-member_stmt: EXPR_MEMBER member_name=EXPR_ID
-    EXPR_ASGN member_type=EXPR_ID
+member_stmt: EXPR_MEMBER member_name=expr_identifier
+    EXPR_ASGN member_type=expr_identifier
         EXPR_OPEN_PAR call_param_list EXPR_CLOSE_PAR;
 
 type_annotation: EXPR_COLON EXPR_ID;
 
+expr_identifier: EXPR_ID;
+
 expr_expr:
-	   EXPR_OPEN_QUASIQUOTE quasiquote #quasiquoteExpr
-    |  expr_expr op=(EXPR_MULT|EXPR_DIV|EXPR_AMP) expr_expr #binOpExpr1
+	    EXPR_OPEN_QUASIQUOTE quasiquote #quasiquoteExpr
+    |   expr_expr op=(EXPR_MULT|EXPR_DIV|EXPR_AMP) expr_expr #binOpExpr1
     |   expr_expr op=(EXPR_PLUS|EXPR_MINUS|EXPR_BAR) expr_expr #binOpExpr2
-    |  call_expression #callExpr
+    |   call_expression #callExpr
     |   EXPR_INT  #intExpr
-    |   EXPR_ID   #idExpr
+    |   expr_identifier #idExpr
     |   EXPR_OPEN_PAR expr_expr EXPR_CLOSE_PAR #parenExpr
-    |   EXPR_ID op=EXPR_DOT EXPR_ID #dotExpr
+    |   expr_identifier op=EXPR_DOT expr_identifier #dotExpr
     ;
 
 call_expression: call_target_name=EXPR_ID EXPR_OPEN_PAR call_param_list EXPR_CLOSE_PAR;
@@ -72,7 +74,7 @@ call_param_list: call_param (EXPR_COMMA call_param)*;
 call_param: expr_expr;
 
 quasiquote:
-	   QUASIQUOTE_SQL sql_stmt_list SQL_CLOSE_QUASIQUOTE #quasiQuoteSql
+	   QUASIQUOTE_SQL SQL_ANYTHING SQL_CLOSE_QUASIQUOTE #quasiQuoteSql
 	|  QUASIQUOTE_CSV csv_header csv_row_list CSV_CLOSE_QUASIQUOTE #quasiQuoteCsv
     ;
 

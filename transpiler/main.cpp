@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     // of the input files will be accumulated in this object.
     lang::Program program;
 
-    bool need_save_token_names = true;
+    bool first_file = true;
 
     for (std::string expr_file : input_files)
     {
@@ -109,20 +109,31 @@ int main(int argc, char* argv[])
 
         ExprLexer expr_lexer(&expr_strm);
 
-        if (need_save_token_names)
+        if (first_file)
         {
-            data::TokenNamesInserter tokenNamesInserter(db);
             db.begin_transaction();
             auto const& tok_names = expr_lexer.getTokenNames();
 
             for (std::size_t i=0; i<tok_names.size(); i++)
             {
                 std::string name = tok_names[i];
-                tokenNamesInserter.insert(i, name);
+                db.insert_token_name(i, name);
             }
 
             db.commit_transaction();
-            need_save_token_names = false;
+
+            db.begin_transaction();
+            auto const& rule_names = expr_lexer.getRuleNames();
+
+            for (std::size_t i=0; i<rule_names.size(); i++)
+            {
+                std::string name = rule_names[i];
+                db.insert_rule_name(i, name);
+            }
+
+            db.commit_transaction();
+
+            first_file = false;
         }
 
         CerrErrorListener expr_error_listener;
@@ -131,14 +142,13 @@ int main(int argc, char* argv[])
 
         antlr4::CommonTokenStream expr_tokens(&expr_lexer);
 
-        data::TokenInserter tok_ins(db);
         db.begin_transaction();
 
         expr_tokens.fill();
         for (auto expr_token : expr_tokens.getTokens())
         {
             std::cout << expr_token->toString() << std::endl;
-            tok_ins.insert(expr_token);
+            db.insert_token(expr_token);
         }
 
         db.commit_transaction();
@@ -150,8 +160,7 @@ int main(int argc, char* argv[])
         expr_parser.removeErrorListeners(); // remove ConsoleErrorListener
         expr_parser.addErrorListener(&expr_error_listener);
 
-        data::ParserRuleContextInserter prc_ctx(db);
-        ParseListener listener(&expr_parser, &program, &prc_ctx);
+        ParseListener listener(&expr_parser, &program, &db);
 
         antlr4::tree::ParseTreeWalker walker;
         walker.walk(&listener, expr_tree); // initiate walk of tree with listener
