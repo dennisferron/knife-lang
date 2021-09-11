@@ -10,15 +10,15 @@ void ParseListener::enterEveryRule(antlr4::ParserRuleContext* ctx)
     log_database->insert_parse_context(ctx);
 }
 
-void ParseListener::enterSql_stmt_list(ExprParser::Sql_stmt_listContext *ctx)
-{
+//void ParseListener::enterSql_stmt_list(ExprParser::Sql_stmt_listContext *ctx)
+//{
 //    auto tokens = parser->getTokenStream();
 //    std::string text = tokens->getText(ctx);
 //    std::cout << "SQL statements: "
 //        << text << "\n";
-
-    //System.out.println("\t"+type+" "+ctx.Identifier()+args+";");
-}
+//
+//    //System.out.println("\t"+type+" "+ctx.Identifier()+args+";");
+//}
 
 void ParseListener::enterQuasiQuoteSql(ExprParser::QuasiQuoteSqlContext* ctx)
 {

@@ -32,7 +32,7 @@ public:
     virtual void enterEveryRule(antlr4::ParserRuleContext* ctx) override;
     virtual void exitStat(ExprParser::StatContext * /*ctx*/) override;
 
-    void enterSql_stmt_list(ExprParser::Sql_stmt_listContext *ctx) override;
+    //void enterSql_stmt_list(ExprParser::Sql_stmt_listContext *ctx) override;
 
     void enterQuasiQuoteSql(ExprParser::QuasiQuoteSqlContext* ctx) override;
     void enterQuasiQuoteCsv(ExprParser::QuasiQuoteCsvContext* ctx) override;
