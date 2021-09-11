@@ -1,6 +1,6 @@
 #include "ParseListener.hpp"
 
-ParseListener::ParseListener(ExprParser* parser, lang::Program* program, data::LogDatabase* log_database)
+ParseListener::ParseListener(KnifeParser* parser, lang::Program* program, data::LogDatabase* log_database)
     : parser(parser), program(program), log_database(log_database)
 {
 }
@@ -10,7 +10,7 @@ void ParseListener::enterEveryRule(antlr4::ParserRuleContext* ctx)
     log_database->insert_parse_context(ctx);
 }
 
-//void ParseListener::enterSql_stmt_list(ExprParser::Sql_stmt_listContext *ctx)
+//void ParseListener::enterSql_stmt_list(KnifeParser::Sql_stmt_listContext *ctx)
 //{
 //    auto tokens = parser->getTokenStream();
 //    std::string text = tokens->getText(ctx);
@@ -20,7 +20,7 @@ void ParseListener::enterEveryRule(antlr4::ParserRuleContext* ctx)
 //    //System.out.println("\t"+type+" "+ctx.Identifier()+args+";");
 //}
 
-void ParseListener::enterQuasiQuoteSql(ExprParser::QuasiQuoteSqlContext* ctx)
+void ParseListener::enterQuasiQuoteSql(KnifeParser::QuasiQuoteSqlContext* ctx)
 {
     auto tokens = parser->getTokenStream();
     //std::string text = tokens->getText(ctx->sql_stmt_list());
@@ -28,7 +28,7 @@ void ParseListener::enterQuasiQuoteSql(ExprParser::QuasiQuoteSqlContext* ctx)
     //          << text << "\n";
 }
 
-void ParseListener::enterQuasiQuoteCsv(ExprParser::QuasiQuoteCsvContext* ctx)
+void ParseListener::enterQuasiQuoteCsv(KnifeParser::QuasiQuoteCsvContext* ctx)
 {
     auto tokens = parser->getTokenStream();
     std::string text = tokens->getText(ctx->csv_row_list());
@@ -36,37 +36,37 @@ void ParseListener::enterQuasiQuoteCsv(ExprParser::QuasiQuoteCsvContext* ctx)
               << text << "\n";
 }
 
-void ParseListener::enterRelation_name(ExprParser::Relation_nameContext* ctx)
+void ParseListener::enterRelation_name(KnifeParser::Relation_nameContext* ctx)
 {
-    std::string id = ctx->EXPR_ID()->getText();
+    std::string id = ctx->KNIFE_ID()->getText();
     program->relations.push_back(lang::Relation(id));
 }
 
-void ParseListener::enterRelation_param(ExprParser::Relation_paramContext* ctx)
+void ParseListener::enterRelation_param(KnifeParser::Relation_paramContext* ctx)
 {
-    std::string name = ctx->EXPR_ID(0)->getText();
+    std::string name = ctx->KNIFE_ID(0)->getText();
     std::string type = "";
-    if (ctx->EXPR_ID(1))
-        type = ctx->EXPR_ID(1)->getText();
+    if (ctx->KNIFE_ID(1))
+        type = ctx->KNIFE_ID(1)->getText();
     program->last_relation().add_param(lang::ParamVar {name, type});
 }
 
-void ParseListener::enterLet_stmt(ExprParser::Let_stmtContext* ctx)
+void ParseListener::enterLet_stmt(KnifeParser::Let_stmtContext* ctx)
 {
     program->last_relation().add_statement(lang::LetStatement());
 }
 
-void ParseListener::enterFresh_stmt(ExprParser::Fresh_stmtContext* ctx)
+void ParseListener::enterFresh_stmt(KnifeParser::Fresh_stmtContext* ctx)
 {
     program->last_relation().add_statement(lang::FreshStatement());
 }
 
-void ParseListener::enterYield_stmt(ExprParser::Yield_stmtContext* ctx)
+void ParseListener::enterYield_stmt(KnifeParser::Yield_stmtContext* ctx)
 {
     program->last_relation().add_statement(lang::YieldStatement());
 }
 
-void ParseListener::exitMember_stmt(ExprParser::Member_stmtContext* ctx)
+void ParseListener::exitMember_stmt(KnifeParser::Member_stmtContext* ctx)
 {
     auto& os = std::cout;
 
@@ -124,35 +124,35 @@ void ParseListener::put_binop(std::string op, antlr4::ParserRuleContext* ctx)
     log_database->update_expression_parent(lhs, expr);
 }
 
-void ParseListener::exitDotExpr(ExprParser::DotExprContext* ctx)
+void ParseListener::exitDotExpr(KnifeParser::DotExprContext* ctx)
 {
     put_binop(".", ctx);
 }
 
-void ParseListener::exitIntExpr(ExprParser::IntExprContext* ctx)
+void ParseListener::exitIntExpr(KnifeParser::IntExprContext* ctx)
 {
     int value = std::stoi(ctx->getText());
     auto expr = new lang::IntExpr(value);
     put_expr(expr, ctx);
 }
 
-void ParseListener::exitQuasiquoteExpr(ExprParser::QuasiquoteExprContext* ctx)
+void ParseListener::exitQuasiquoteExpr(KnifeParser::QuasiquoteExprContext* ctx)
 {
     auto expr = new lang::QuasiquoteExpr();
     put_expr(expr, ctx);
 }
 
-void ParseListener::exitBinOpExpr2(ExprParser::BinOpExpr2Context* ctx)
+void ParseListener::exitBinOpExpr2(KnifeParser::BinOpExpr2Context* ctx)
 {
     put_binop(ctx->op->getText(), ctx);
 }
 
-void ParseListener::exitBinOpExpr1(ExprParser::BinOpExpr1Context* ctx)
+void ParseListener::exitBinOpExpr1(KnifeParser::BinOpExpr1Context* ctx)
 {
     put_binop(ctx->op->getText(), ctx);
 }
 
-void ParseListener::exitCallExpr(ExprParser::CallExprContext* ctx)
+void ParseListener::exitCallExpr(KnifeParser::CallExprContext* ctx)
 {
     auto method_name_ = get_expr(ctx->call_expression());
 
@@ -182,15 +182,15 @@ void ParseListener::exitCallExpr(ExprParser::CallExprContext* ctx)
         log_database->update_expression_parent(arg, expr);
 }
 
-void ParseListener::exitParenExpr(ExprParser::ParenExprContext* ctx)
+void ParseListener::exitParenExpr(KnifeParser::ParenExprContext* ctx)
 {
-    auto inner_expr = get_expr(ctx->expr_expr());
+    auto inner_expr = get_expr(ctx->expr());
     put_expr(inner_expr, ctx);
 }
 
-void ParseListener::exitIdExpr(ExprParser::IdExprContext* ctx)
+void ParseListener::exitIdExpr(KnifeParser::IdExprContext* ctx)
 {
-    auto inner_expr = get_expr(ctx->expr_identifier());
+    auto inner_expr = get_expr(ctx->identifier());
     put_expr(inner_expr, ctx);
 }
 
@@ -212,12 +212,12 @@ void ParseListener::put_expr(lang::Expression const* expr,
     print_exprs(os);
 }
 
-void ParseListener::exitStat(ExprParser::StatContext*)
+void ParseListener::exitStat(KnifeParser::StatContext*)
 {
     expr_map.clear();
 }
 
-void ParseListener::exitExpr_identifier(ExprParser::Expr_identifierContext* ctx)
+void ParseListener::exitIdentifier(KnifeParser::IdentifierContext* ctx)
 {
     std::string identifier = ctx->getText();
     auto expr = new lang::IdExpr(identifier);

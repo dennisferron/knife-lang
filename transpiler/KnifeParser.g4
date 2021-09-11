@@ -21,57 +21,57 @@
  * Project : sqlite-parser; an ANTLR4 grammar for SQLite https://github.com/bkiers/sqlite-parser
  * Developed by : Bart Kiers, bart@big-o.nl Martin Mirchev, marti_2203@abv.bg
  */
-parser grammar ExprParser;
+parser grammar KnifeParser;
 
 options {
-	tokenVocab = ExprLexer;
+	tokenVocab = KnifeLexer;
 }
 
 /** The start rule; begin parsing here. */
 prog:   relation* EOF ;
 
-relation: relation_header EXPR_OPEN_BRACE stat* EXPR_CLOSE_BRACE;
+relation: relation_header KNIFE_OPEN_BRACE stat* KNIFE_CLOSE_BRACE;
 
-relation_header: EXPR_RELATION relation_name EXPR_OPEN_PAR relation_param_list? EXPR_CLOSE_PAR;
-relation_name: EXPR_ID;
-relation_param_list: relation_param (EXPR_COMMA relation_param)*;
-relation_param: EXPR_ID (EXPR_COLON EXPR_ID)?;
+relation_header: KNIFE_RELATION relation_name KNIFE_OPEN_PAR relation_param_list? KNIFE_CLOSE_PAR;
+relation_name: KNIFE_ID;
+relation_param_list: relation_param (KNIFE_COMMA relation_param)*;
+relation_param: KNIFE_ID (KNIFE_COLON KNIFE_ID)?;
 
 stat: (
         let_stmt
     |   fresh_stmt
     |   yield_stmt
     |   member_stmt
-    |   expr_expr
-    |   EXPR_ID EXPR_ASGN expr_expr
-    ) EXPR_SEMICOLON
+    |   expr
+    |   KNIFE_ID KNIFE_ASGN expr
+    ) KNIFE_SEMICOLON
     ;
 
-let_stmt: EXPR_LET EXPR_ID type_annotation? EXPR_ASGN expr_expr;
-fresh_stmt: EXPR_FRESH EXPR_ID type_annotation?;
-yield_stmt: EXPR_YIELD expr_expr;
-member_stmt: EXPR_MEMBER member_name=expr_identifier
-    EXPR_ASGN member_type=expr_identifier
-        EXPR_OPEN_PAR call_param_list EXPR_CLOSE_PAR;
+let_stmt: KNIFE_LET KNIFE_ID type_annotation? KNIFE_ASGN expr;
+fresh_stmt: KNIFE_FRESH KNIFE_ID type_annotation?;
+yield_stmt: KNIFE_YIELD expr;
+member_stmt: KNIFE_MEMBER member_name=identifier
+    KNIFE_ASGN member_type=identifier
+        KNIFE_OPEN_PAR call_param_list KNIFE_CLOSE_PAR;
 
-type_annotation: EXPR_COLON EXPR_ID;
+type_annotation: KNIFE_COLON KNIFE_ID;
 
-expr_identifier: EXPR_ID;
+identifier: KNIFE_ID;
 
-expr_expr:
-	    EXPR_OPEN_QUASIQUOTE quasiquote #quasiquoteExpr
-    |   expr_expr op=(EXPR_MULT|EXPR_DIV|EXPR_AMP) expr_expr #binOpExpr1
-    |   expr_expr op=(EXPR_PLUS|EXPR_MINUS|EXPR_BAR) expr_expr #binOpExpr2
+expr:
+	    KNIFE_OPEN_QUASIQUOTE quasiquote #quasiquoteExpr
+    |   expr op=(KNIFE_MULT|KNIFE_DIV|KNIFE_AMP) expr #binOpExpr1
+    |   expr op=(KNIFE_PLUS|KNIFE_MINUS|KNIFE_BAR) expr #binOpExpr2
     |   call_expression #callExpr
-    |   EXPR_INT  #intExpr
-    |   expr_identifier #idExpr
-    |   EXPR_OPEN_PAR expr_expr EXPR_CLOSE_PAR #parenExpr
-    |   expr_identifier op=EXPR_DOT expr_identifier #dotExpr
+    |   KNIFE_INT  #intExpr
+    |   identifier #idExpr
+    |   KNIFE_OPEN_PAR expr KNIFE_CLOSE_PAR #parenExpr
+    |   identifier op=KNIFE_DOT identifier #dotExpr
     ;
 
-call_expression: call_target_name=EXPR_ID EXPR_OPEN_PAR call_param_list EXPR_CLOSE_PAR;
-call_param_list: call_param (EXPR_COMMA call_param)*;
-call_param: expr_expr;
+call_expression: call_target_name=KNIFE_ID KNIFE_OPEN_PAR call_param_list KNIFE_CLOSE_PAR;
+call_param_list: call_param (KNIFE_COMMA call_param)*;
+call_param: expr;
 
 quasiquote:
 	   QUASIQUOTE_SQL SQL_ANYTHING SQL_CLOSE_QUASIQUOTE #quasiQuoteSql

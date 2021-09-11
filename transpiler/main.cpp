@@ -1,6 +1,6 @@
 #include "antlr4-runtime.h"
-#include "ExprLexer.h"
-#include "ExprParser.h"
+#include "KnifeLexer.h"
+#include "KnifeParser.h"
 #include "ParseListener.hpp"
 #include "outp/Output.hpp"
 #include "Transform.hpp"
@@ -96,23 +96,23 @@ int main(int argc, char* argv[])
 
     bool first_file = true;
 
-    for (std::string expr_file : input_files)
+    for (std::string knife_file : input_files)
     {
-        antlr4::ANTLRFileStream expr_strm(expr_file);
+        antlr4::ANTLRFileStream knife_strm(knife_file);
 
-        if (expr_strm.size() == 0)
+        if (knife_strm.size() == 0)
         {
             std::cerr << "Unable to open expr file (or file is empty): "
-                      << expr_file << "\n";
+                      << knife_file << "\n";
             return -1;
         }
 
-        ExprLexer expr_lexer(&expr_strm);
+        KnifeLexer knife_lexer(&knife_strm);
 
         if (first_file)
         {
             db.begin_transaction();
-            auto const& tok_names = expr_lexer.getTokenNames();
+            auto const& tok_names = knife_lexer.getTokenNames();
 
             for (std::size_t i=0; i<tok_names.size(); i++)
             {
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
             db.commit_transaction();
 
             db.begin_transaction();
-            auto const& rule_names = expr_lexer.getRuleNames();
+            auto const& rule_names = knife_lexer.getRuleNames();
 
             for (std::size_t i=0; i<rule_names.size(); i++)
             {
@@ -136,36 +136,36 @@ int main(int argc, char* argv[])
             first_file = false;
         }
 
-        CerrErrorListener expr_error_listener;
-        expr_lexer.removeErrorListeners();
-        expr_lexer.addErrorListener(&expr_error_listener);
+        CerrErrorListener knife_error_listener;
+        knife_lexer.removeErrorListeners();
+        knife_lexer.addErrorListener(&knife_error_listener);
 
-        antlr4::CommonTokenStream expr_tokens(&expr_lexer);
+        antlr4::CommonTokenStream knife_tokens(&knife_lexer);
 
         db.begin_transaction();
 
-        expr_tokens.fill();
-        for (auto expr_token : expr_tokens.getTokens())
+        knife_tokens.fill();
+        for (auto knife_token : knife_tokens.getTokens())
         {
-            std::cout << expr_token->toString() << std::endl;
-            db.insert_token(expr_token);
+            std::cout << knife_token->toString() << std::endl;
+            db.insert_token(knife_token);
         }
 
         db.commit_transaction();
 
-        ExprParser expr_parser(&expr_tokens);
-        antlr4::tree::ParseTree* expr_tree = expr_parser.prog();
-        //std::cout << expr_tree->toStringTree(&expr_parser, true) << std::endl;
+        KnifeParser knife_parser(&knife_tokens);
+        antlr4::tree::ParseTree* knife_tree = knife_parser.prog();
+        //std::cout << knife_tree->toStringTree(&knife_parser, true) << std::endl;
 
-        expr_parser.removeErrorListeners(); // remove ConsoleErrorListener
-        expr_parser.addErrorListener(&expr_error_listener);
+        knife_parser.removeErrorListeners(); // remove ConsoleErrorListener
+        knife_parser.addErrorListener(&knife_error_listener);
 
-        ParseListener listener(&expr_parser, &program, &db);
+        ParseListener listener(&knife_parser, &program, &db);
 
         antlr4::tree::ParseTreeWalker walker;
-        walker.walk(&listener, expr_tree); // initiate walk of tree with listener
+        walker.walk(&listener, knife_tree); // initiate walk of tree with listener
 
-        if (auto errs = expr_parser.getNumberOfSyntaxErrors())
+        if (auto errs = knife_parser.getNumberOfSyntaxErrors())
         {
             std::cerr << errs << " syntax errors." << std::endl;
             return -1;

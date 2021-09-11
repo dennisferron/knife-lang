@@ -21,38 +21,38 @@
  * Project : sqlite-parser; an ANTLR4 grammar for SQLite https://github.com/bkiers/sqlite-parser
  * Developed by : Bart Kiers, bart@big-o.nl
  */
-lexer grammar ExprLexer;
+lexer grammar KnifeLexer;
 
-EXPR_OPEN_QUASIQUOTE : '{|' -> mode(QUASIQUOTE);
+KNIFE_OPEN_QUASIQUOTE : '{|' -> mode(QUASIQUOTE);
 
-EXPR_LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> skip;
-EXPR_BLOCK_COMMENT: '/*' .*? '*/' -> skip;
+KNIFE_LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> skip;
+KNIFE_BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 
-EXPR_LET : 'let';
-EXPR_FRESH : 'fresh';
-EXPR_RELATION : 'relation';
-EXPR_YIELD : 'yield';
-EXPR_MEMBER : 'member';
+KNIFE_LET : 'let';
+KNIFE_FRESH : 'fresh';
+KNIFE_RELATION : 'relation';
+KNIFE_YIELD : 'yield';
+KNIFE_MEMBER : 'member';
 
-EXPR_PLUS : '+';
-EXPR_MINUS : '-';
-EXPR_MULT : '*';
-EXPR_DIV : '/';
-EXPR_ASGN : '=';
-EXPR_ID  :   [a-zA-Z_] [a-zA-Z_0-9]* ;
-EXPR_INT :   [0-9]+ ;         // match integers
-EXPR_OPEN_PAR : '(';
-EXPR_CLOSE_PAR : ')';
-EXPR_OPEN_BRACE : '{';
-EXPR_CLOSE_BRACE : '}';
-EXPR_COLON : ':';
-EXPR_SEMICOLON : ';';
-EXPR_BAR : '|';
-EXPR_AMP : '&';
-EXPR_COMMA: ',';
-EXPR_DOT: '.';
+KNIFE_PLUS : '+';
+KNIFE_MINUS : '-';
+KNIFE_MULT : '*';
+KNIFE_DIV : '/';
+KNIFE_ASGN : '=';
+KNIFE_ID  :   [a-zA-Z_] [a-zA-Z_0-9]* ;
+KNIFE_INT :   [0-9]+ ;         // match integers
+KNIFE_OPEN_PAR : '(';
+KNIFE_CLOSE_PAR : ')';
+KNIFE_OPEN_BRACE : '{';
+KNIFE_CLOSE_BRACE : '}';
+KNIFE_COLON : ':';
+KNIFE_SEMICOLON : ';';
+KNIFE_BAR : '|';
+KNIFE_AMP : '&';
+KNIFE_COMMA: ',';
+KNIFE_DOT: '.';
 
-EXPR_WS  :   [ \t\r\n]+ -> skip ; // toss out whitespace
+KNIFE_WS  :   [ \t\r\n]+ -> skip ; // toss out whitespace
 
 mode QUASIQUOTE;
 QUASIQUOTE_CSV : 'CSV' -> mode(CSV_HEADER);

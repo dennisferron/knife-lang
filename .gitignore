@@ -71,3 +71,6 @@ doxygen/*
 #Ignore cmake temporary build output
 cmake-build-*/
 
+#Ignore ANTLR4 generated files folder
+gen/
+
