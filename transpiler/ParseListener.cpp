@@ -80,11 +80,10 @@ void ParseListener::exitMember_stmt(KnifeParser::Member_stmtContext* ctx)
     {
         if (a->getText() != ",") // TODO: exclude comma more elegantly
         {
-            auto arg_expr1 = get_expr(a);
-
             stmt.args.push_back(a->getText());
             os << "MemberStatment arg ";
-            auto* arg_expr = get_expr(a);
+            auto* arg_expr = get_expr(
+                static_cast<antlr4::ParserRuleContext*>(a));
             // TODO: store arg_expr in stmt
             arg_expr->print(os);
             os << "\n";
@@ -97,36 +96,50 @@ void ParseListener::exitMember_stmt(KnifeParser::Member_stmtContext* ctx)
     program->last_relation().add_statement(stmt);
 }
 
-lang::Expression const* ParseListener::get_expr(antlr4::tree::ParseTree* ctx)
+lang::Expression const* ParseListener::get_expr(antlr4::ParserRuleContext* ctx)
 {
     auto find_result = expr_map.find(ctx);
 
     if (find_result == expr_map.end())
     {
-        std::cerr << "get_expr: " << ctx->getText() << "\n";
-        throw std::logic_error("No expression for the requested parse context.");
+        std::stringstream msg;
+        msg << "No expression for the requested parse context."
+            << "\nLine " << ctx->start->getLine()
+            << ":" << ctx->start->getCharPositionInLine()
+            << "\n Text " << ctx->getText()
+            << "\n Rule " << parser->getRuleNames()[ctx->getRuleIndex()]
+                ;
+
+        auto p = ctx;
+        while (p = dynamic_cast<antlr4::ParserRuleContext*>(p->parent))
+        {
+            msg << "\n in " << parser->getRuleNames()[p->getRuleIndex()]
+            ;
+        }
+
+        throw std::logic_error(msg.str());
     }
 
     return find_result->second;
 }
 
-void ParseListener::put_binop(std::string op, antlr4::ParserRuleContext* ctx)
+void ParseListener::put_binop(std::string op,
+                              antlr4::ParserRuleContext* ctx,
+                              antlr4::ParserRuleContext* lhs,
+                              antlr4::ParserRuleContext* rhs)
 {
-    auto rhs_ = get_expr(ctx->children[2]);
-    auto lhs_ = get_expr(ctx->children[0]);
-
-    auto rhs = get_expr(ctx->children[2]);
-    auto lhs = get_expr(ctx->children[0]);
-    auto expr = new lang::BinOpExpr(op, lhs, rhs);
+    auto lhs_expr = get_expr(lhs);
+    auto rhs_expr = get_expr(rhs);
+    auto expr = new lang::BinOpExpr(op, lhs_expr, rhs_expr);
     put_expr(expr, ctx);
 
-    log_database->update_expression_parent(rhs, expr);
-    log_database->update_expression_parent(lhs, expr);
+    log_database->update_expression_parent(lhs_expr, expr);
+    log_database->update_expression_parent(rhs_expr, expr);
 }
 
 void ParseListener::exitDotExpr(KnifeParser::DotExprContext* ctx)
 {
-    put_binop(".", ctx);
+    put_binop(".", ctx, ctx->lhs, ctx->rhs);
 }
 
 void ParseListener::exitIntExpr(KnifeParser::IntExprContext* ctx)
@@ -144,16 +157,18 @@ void ParseListener::exitQuasiquoteExpr(KnifeParser::QuasiquoteExprContext* ctx)
 
 void ParseListener::exitBinOpExpr2(KnifeParser::BinOpExpr2Context* ctx)
 {
-    put_binop(ctx->op->getText(), ctx);
+    put_binop(ctx->op->getText(), ctx, ctx->lhs, ctx->rhs);
 }
 
 void ParseListener::exitBinOpExpr1(KnifeParser::BinOpExpr1Context* ctx)
 {
-    put_binop(ctx->op->getText(), ctx);
+    put_binop(ctx->op->getText(), ctx, ctx->lhs, ctx->rhs);
 }
 
+// TODO:  Also handle call_expression
 void ParseListener::exitCallExpr(KnifeParser::CallExprContext* ctx)
 {
+    // Actually I think this line is wrong
     auto method_name_ = get_expr(ctx->call_expression());
 
     std::string method_name = ctx->call_expression()
@@ -170,7 +185,8 @@ void ParseListener::exitCallExpr(KnifeParser::CallExprContext* ctx)
     {
         if (a->getText() != ",") // TODO: exclude comma more elegantly
         {
-            auto param = get_expr(a);
+            auto param = get_expr(
+                static_cast<antlr4::ParserRuleContext*>(a));
             params.push_back(param);
         }
     }

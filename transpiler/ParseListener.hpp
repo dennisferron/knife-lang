@@ -16,14 +16,16 @@ private:
     data::LogDatabase* log_database;
 
     std::map<
-        antlr4::tree::ParseTree const*,
+        antlr4::ParserRuleContext const*,
         lang::Expression const*
     > expr_map;
 
-    lang::Expression const* get_expr(antlr4::tree::ParseTree* ctx);
+    lang::Expression const* get_expr(antlr4::ParserRuleContext* ctx);
     void put_expr(lang::Expression const* expr,
                   antlr4::ParserRuleContext* ctx);
-    void put_binop(std::string op, antlr4::ParserRuleContext* ctx);
+    void put_binop(std::string op, antlr4::ParserRuleContext* ctx,
+                   antlr4::ParserRuleContext* lhs,
+                   antlr4::ParserRuleContext* rhs);
     void print_exprs(std::ostream& os);
 
 public:

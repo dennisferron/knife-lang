@@ -60,13 +60,13 @@ identifier: IDENT;
 
 expr:
 	    OPEN_QUASIQUOTE quasiquote #quasiquoteExpr
-    |   expr op=(MULT|DIV|AMP) expr #binOpExpr1
-    |   expr op=(PLUS|MINUS|BAR) expr #binOpExpr2
+    |   lhs=expr op=(MULT|DIV|AMP) rhs=expr #binOpExpr1
+    |   lhs=expr op=(PLUS|MINUS|BAR) rhs=expr #binOpExpr2
     |   call_expression #callExpr
     |   INT  #intExpr
     |   identifier #idExpr
     |   OPEN_PAR expr CLOSE_PAR #parenExpr
-    |   identifier op=DOT identifier #dotExpr
+    |   lhs=identifier op=DOT rhs=identifier #dotExpr
     ;
 
 call_expression: call_target_name=IDENT OPEN_PAR call_param_list CLOSE_PAR;
