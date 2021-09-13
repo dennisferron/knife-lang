@@ -23,36 +23,36 @@
  */
 lexer grammar KnifeLexer;
 
-KNIFE_OPEN_QUASIQUOTE : '{|' -> mode(QUASIQUOTE);
+OPEN_QUASIQUOTE : '{|' -> mode(QUASIQUOTE);
 
-KNIFE_LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> skip;
-KNIFE_BLOCK_COMMENT: '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> skip;
+BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 
-KNIFE_LET : 'let';
-KNIFE_FRESH : 'fresh';
-KNIFE_RELATION : 'relation';
-KNIFE_YIELD : 'yield';
-KNIFE_MEMBER : 'member';
+LET : 'let';
+FRESH : 'fresh';
+RELATION : 'relation';
+YIELD : 'yield';
+MEMBER : 'member';
 
-KNIFE_PLUS : '+';
-KNIFE_MINUS : '-';
-KNIFE_MULT : '*';
-KNIFE_DIV : '/';
-KNIFE_ASGN : '=';
-KNIFE_ID  :   [a-zA-Z_] [a-zA-Z_0-9]* ;
-KNIFE_INT :   [0-9]+ ;         // match integers
-KNIFE_OPEN_PAR : '(';
-KNIFE_CLOSE_PAR : ')';
-KNIFE_OPEN_BRACE : '{';
-KNIFE_CLOSE_BRACE : '}';
-KNIFE_COLON : ':';
-KNIFE_SEMICOLON : ';';
-KNIFE_BAR : '|';
-KNIFE_AMP : '&';
-KNIFE_COMMA: ',';
-KNIFE_DOT: '.';
+PLUS : '+';
+MINUS : '-';
+MULT : '*';
+DIV : '/';
+ASGN : '=';
+IDENT  :   [a-zA-Z_] [a-zA-Z_0-9]* ;
+INT :   [0-9]+ ;         // match integers
+OPEN_PAR : '(';
+CLOSE_PAR : ')';
+OPEN_BRACE : '{';
+CLOSE_BRACE : '}';
+COLON : ':';
+SEMICOLON : ';';
+BAR : '|';
+AMP : '&';
+COMMA: ',';
+DOT: '.';
 
-KNIFE_WS  :   [ \t\r\n]+ -> skip ; // toss out whitespace
+WS  :   [ \t\r\n]+ -> skip ; // toss out whitespace
 
 mode QUASIQUOTE;
 QUASIQUOTE_CSV : 'CSV' -> mode(CSV_HEADER);
@@ -84,4 +84,5 @@ CSV_WS  :   [ \t]+ -> skip ; // toss out whitespace
 mode SQLITE;
 
 SQL_CLOSE_QUASIQUOTE : '|}' -> mode(DEFAULT_MODE);
+SQL_WS  :   [ \t\n]+ -> skip ; // toss out whitespace
 SQL_ANYTHING : .+?;

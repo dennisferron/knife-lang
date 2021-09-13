@@ -38,16 +38,16 @@ void ParseListener::enterQuasiQuoteCsv(KnifeParser::QuasiQuoteCsvContext* ctx)
 
 void ParseListener::enterRelation_name(KnifeParser::Relation_nameContext* ctx)
 {
-    std::string id = ctx->KNIFE_ID()->getText();
+    std::string id = ctx->IDENT()->getText();
     program->relations.push_back(lang::Relation(id));
 }
 
 void ParseListener::enterRelation_param(KnifeParser::Relation_paramContext* ctx)
 {
-    std::string name = ctx->KNIFE_ID(0)->getText();
+    std::string name = ctx->IDENT(0)->getText();
     std::string type = "";
-    if (ctx->KNIFE_ID(1))
-        type = ctx->KNIFE_ID(1)->getText();
+    if (ctx->IDENT(1))
+        type = ctx->IDENT(1)->getText();
     program->last_relation().add_param(lang::ParamVar {name, type});
 }
 
