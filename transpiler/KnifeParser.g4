@@ -70,8 +70,7 @@ expr:
     ;
 
 call_expression: call_target_name=IDENT OPEN_PAR call_param_list CLOSE_PAR;
-call_param_list: call_param (COMMA call_param)*;
-call_param: expr;
+call_param_list: expr (COMMA expr)*;
 
 quasiquote:
 	   QUASIQUOTE_SQL SQL_ANYTHING* SQL_CLOSE_QUASIQUOTE #quasiQuoteSql

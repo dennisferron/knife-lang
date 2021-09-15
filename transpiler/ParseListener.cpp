@@ -165,17 +165,17 @@ void ParseListener::exitBinOpExpr1(KnifeParser::BinOpExpr1Context* ctx)
     put_binop(ctx->op->getText(), ctx, ctx->lhs, ctx->rhs);
 }
 
-// TODO:  Also handle call_expression
 void ParseListener::exitCallExpr(KnifeParser::CallExprContext* ctx)
 {
-    // Actually I think this line is wrong
-    auto method_name_ = get_expr(ctx->call_expression());
+    auto inner_expr = get_expr(ctx->call_expression());
+    put_expr(inner_expr, ctx);
+}
 
-    std::string method_name = ctx->call_expression()
-            ->call_target_name->getText();
+void ParseListener::exitCall_expression(KnifeParser::Call_expressionContext* ctx)
+{
+    std::string method_name = ctx->call_target_name->getText();
 
     auto const& children = ctx
-            ->call_expression()
             ->call_param_list()
             ->children;
 

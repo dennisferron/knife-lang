@@ -53,6 +53,7 @@ public:
     virtual void exitQuasiquoteExpr(KnifeParser::QuasiquoteExprContext* ctx) override;
     virtual void exitBinOpExpr2(KnifeParser::BinOpExpr2Context* ctx) override;
     virtual void exitBinOpExpr1(KnifeParser::BinOpExpr1Context* ctx) override;
+    virtual void exitCall_expression(KnifeParser::Call_expressionContext* ctx) override;
     virtual void exitCallExpr(KnifeParser::CallExprContext* ctx) override;
     virtual void exitParenExpr(KnifeParser::ParenExprContext* ctx) override;
     virtual void exitIdExpr(KnifeParser::IdExprContext* ctx) override;
