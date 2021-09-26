@@ -47,14 +47,14 @@ stat: (
     ) SEMICOLON
     ;
 
-let_stmt: LET IDENT type_annotation? ASGN expr;
-fresh_stmt: FRESH IDENT type_annotation?;
+let_stmt: LET var_name=IDENT (COLON var_type=type_annotation)? ASGN var_init=expr;
+fresh_stmt: FRESH var_name=IDENT (COLON var_type=type_annotation)?;
 yield_stmt: YIELD expr;
 member_stmt: MEMBER member_name=identifier
     ASGN member_type=identifier
         OPEN_PAR call_param_list CLOSE_PAR;
 
-type_annotation: COLON IDENT;
+type_annotation: IDENT;
 
 identifier: IDENT;
 

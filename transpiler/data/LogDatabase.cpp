@@ -2,7 +2,8 @@
 
 #include <sstream>
 
-using namespace data;
+using namespace knife;
+using namespace knife::data;
 
 LogDatabase::LogDatabase(std::string db_file)
 {
@@ -92,7 +93,7 @@ void LogDatabase::create_tables()
 {
     exec("DROP TABLE IF EXISTS TokenTypeNames;");
     exec(R"(
-        CREATE TABLE TokenTypeNames (
+        CREATE TABLE IF NOT EXISTS TokenTypeNames (
             tokenType INTEGER PRIMARY KEY,
             tokenName TEXT
         );
@@ -100,7 +101,7 @@ void LogDatabase::create_tables()
 
     exec("DROP TABLE IF EXISTS RuleNames;");
     exec(R"(
-        CREATE TABLE RuleNames (
+        CREATE TABLE IF NOT EXISTS RuleNames (
             ruleIndex INTEGER PRIMARY KEY,
             ruleName TEXT
         );
@@ -121,7 +122,7 @@ void LogDatabase::create_tables()
 
     exec("DROP TABLE IF EXISTS ParserRuleContext;");
     exec(R"(
-        CREATE TABLE ParserRuleContext (
+        CREATE TABLE IF NOT EXISTS ParserRuleContext (
             address    INTEGER PRIMARY KEY,
             parent     INTEGER,
             startToken INTEGER,
@@ -132,7 +133,7 @@ void LogDatabase::create_tables()
 
     exec("DROP TABLE IF EXISTS Expressions;");
     exec(R"(
-        CREATE TABLE Expressions (
+        CREATE TABLE IF NOT EXISTS Expressions (
             address      INTEGER,
             parent       INTEGER,
             parseContext INTEGER,
@@ -140,15 +141,7 @@ void LogDatabase::create_tables()
         );
     )");
 
-    exec("DROP TABLE IF EXISTS ExprStack;");
-    exec(R"(
-        CREATE TABLE ExprStack (
-            pushExpr   INTEGER,
-            numPopped  INTEGER,
-            generation INTEGER
-        );
-    )");
-
+    exec("DROP VIEW IF EXISTS ExpressionsView;");
     exec(R"(
     CREATE VIEW IF NOT EXISTS ExpressionsView AS
         SELECT tk.line,
@@ -208,15 +201,6 @@ void LogDatabase::prepare_statements()
         update Expressions
             set parent = ?
             where address = ?
-    )");
-
-    stmt_insert_expr_stack = prepare(R"(
-        insert into ExprStack (
-            pushExpr,
-            numPopped,
-            generation
-        )
-        values (?, ?, ?)
     )");
 }
 
@@ -321,17 +305,3 @@ void LogDatabase::update_expression_parent(lang::Expression const* expr, lang::E
     sqlite3_reset(stmt);
 }
 
-void LogDatabase::insert_stack(lang::Expression const* pushExpr, std::size_t numPopped, int generation)
-{
-    auto stmt = stmt_insert_expr_stack;
-
-    sqlite3_bind_int64(stmt, 1,
-                       reinterpret_cast<sqlite3_int64>(pushExpr));
-    sqlite3_bind_int64(stmt, 2, numPopped);
-    sqlite3_bind_int64(stmt, 3, generation);
-
-    sqlite3_step(stmt);
-
-    sqlite3_clear_bindings(stmt);
-    sqlite3_reset(stmt);
-}

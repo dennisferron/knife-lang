@@ -2,8 +2,8 @@
 
 #include "../Json.hpp"
 
-Output::Output(std::string file_name)
-    : ofs(file_name), document(ofs)
+Output::Output(std::ostream& ofs)
+    : document(ofs)
 {
 }
 
@@ -14,11 +14,7 @@ Output::~Output()
 
 void Output::close()
 {
-    if (ofs.is_open())
-    {
-        document.close();
-        ofs.close();
-    }
+    document.close();
 }
 
 void Output::demo(JsonObject root)
@@ -131,6 +127,7 @@ void Output::write(JsonArray& arr, outp::RelationClass const& relation)
                 {
                     o["name"] = v.var_name;
                     o["type"] = v.type;
+                    o["comment"] = v.comment;
                 };
             }
         };
@@ -142,6 +139,7 @@ void Output::write(JsonArray& arr, outp::RelationClass const& relation)
                 {
                     o["name"] = v.var_name;
                     o["type"] = v.type;
+                    o["comment"] = v.comment;
                 };
             }
         };
@@ -153,6 +151,7 @@ void Output::write(JsonArray& arr, outp::RelationClass const& relation)
                 {
                     o["name"] = v.var_name;
                     o["type"] = v.type;
+                    o["comment"] = v.comment;
                 };
             }
         };
@@ -241,6 +240,8 @@ void Output::write(JsonArray& arr, const outp::FreshVar& v)
     arr += [&](JsonObject o)
     {
         o["var_name"] = v.var_name;
+        o["type"] = v.type;
+        o["comment"] = v.comment;
     };
 }
 
@@ -266,8 +267,8 @@ void Output::write_case_template(JsonObject& o, const outp::Case_InitSubRel& c)
     };
 }
 
-OutputHeader::OutputHeader(std::string base_name)
-    : Output(base_name + "_header.json"), base_name(base_name)
+OutputHeader::OutputHeader(std::ostream& ofs, std::string base_name)
+    : Output(ofs), base_name(base_name)
 {
 }
 
@@ -279,8 +280,8 @@ void OutputHeader::write(outp::ProgramNamespace const& program)
     demo(root);
 }
 
-OutputSource::OutputSource(std::string base_name)
-        : Output(base_name + "_source.json"), base_name(base_name)
+OutputSource::OutputSource(std::ostream& ofs, std::string base_name)
+        : Output(ofs), base_name(base_name)
 {
 }
 
@@ -292,8 +293,8 @@ void OutputSource::write(outp::ProgramNamespace const& program)
     demo(root);
 }
 
-OutputDbInit::OutputDbInit(std::string base_name)
-        : Output(base_name + "_db_init.json"), base_name(base_name)
+OutputDbInit::OutputDbInit(std::ostream& ofs, std::string base_name)
+        : Output(ofs), base_name(base_name)
 {
 }
 

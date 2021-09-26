@@ -13,7 +13,8 @@ include(UseBoost)
 
 add_executable(tests
         TestMain.cpp
-        UnitTests.cpp
-)
+        EnvironmentTests.cpp
+        CompilationTests.cpp
+        Utility.hpp)
 
-target_link_libraries(tests PUBLIC basekit)
+target_link_libraries(tests PUBLIC basekit knife_lib)

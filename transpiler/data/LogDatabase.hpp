@@ -1,15 +1,10 @@
 #pragma once
 
-#include "antlr4-runtime.h"
-#include "sqlite3.h"
-#include "../lang/Expression.hpp"
+#include "ParseLogger.hpp"
 
-#include <string>
-#include <memory>
-
-namespace data
+namespace knife::data
 {
-    class LogDatabase
+    class LogDatabase : public ParseLogger
     {
     private:
         sqlite3* db = nullptr;
@@ -32,16 +27,15 @@ namespace data
         LogDatabase(std::string db_file);
         ~LogDatabase();
 
-        void begin_transaction();
-        void commit_transaction();
-        void rollback_transaction();
+        void begin_transaction() override;
+        void commit_transaction() override;
+        void rollback_transaction() override;
 
-        void insert_token_name(std::size_t tokenType, std::string tokenName);
-        void insert_rule_name(std::size_t rule_index, std::string rule_name);
-        void insert_token(antlr4::Token* token);
-        void insert_parse_context(antlr4::ParserRuleContext* ctx);
-        void insert_expression(lang::Expression const* expr, antlr4::ParserRuleContext const* ctx);
-        void update_expression_parent(lang::Expression const* expr, lang::Expression const* parent);
-        void insert_stack(lang::Expression const* pushExpr, std::size_t numPopped, int generation);
+        void insert_token_name(std::size_t tokenType, std::string tokenName) override;
+        void insert_rule_name(std::size_t rule_index, std::string rule_name) override;
+        void insert_token(antlr4::Token* token) override;
+        void insert_parse_context(antlr4::ParserRuleContext* ctx) override;
+        void insert_expression(lang::Expression const* expr, antlr4::ParserRuleContext const* ctx) override;
+        void update_expression_parent(lang::Expression const* expr, lang::Expression const* parent) override;
     };
 }

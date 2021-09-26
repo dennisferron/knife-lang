@@ -1,13 +1,15 @@
 #include "ParseListener.hpp"
 
-ParseListener::ParseListener(KnifeParser* parser, lang::Program* program, data::LogDatabase* log_database)
-    : parser(parser), program(program), log_database(log_database)
+using namespace knife;
+
+ParseListener::ParseListener(KnifeParser* parser, lang::Program* program, data::ParseLogger* logger)
+    : parser(parser), program(program), logger(logger)
 {
 }
 
 void ParseListener::enterEveryRule(antlr4::ParserRuleContext* ctx)
 {
-    log_database->insert_parse_context(ctx);
+    logger->insert_parse_context(ctx);
 }
 
 //void ParseListener::enterSql_stmt_list(KnifeParser::Sql_stmt_listContext *ctx)
@@ -53,16 +55,30 @@ void ParseListener::enterRelation_param(KnifeParser::Relation_paramContext* ctx)
 
 void ParseListener::enterLet_stmt(KnifeParser::Let_stmtContext* ctx)
 {
-    program->last_relation().add_statement(lang::LetStatement());
+    lang::LetStatement stmt =
+    {
+        ctx->var_name->getText(),
+        ctx->var_type ? ctx->var_type->getText() : std::string(""),
+        ctx->var_init->getText()  // TODO: get the expr
+    };
+
+    program->last_relation().add_statement(stmt);
 }
 
 void ParseListener::enterFresh_stmt(KnifeParser::Fresh_stmtContext* ctx)
 {
-    program->last_relation().add_statement(lang::FreshStatement());
+    lang::FreshStatement stmt =
+    {
+        ctx->var_name->getText(),
+        ctx->var_type ? ctx->var_type->getText() : ""
+    };
+
+    program->last_relation().add_statement(stmt);
 }
 
 void ParseListener::enterYield_stmt(KnifeParser::Yield_stmtContext* ctx)
 {
+    // TODO: get the expr
     program->last_relation().add_statement(lang::YieldStatement());
 }
 
@@ -81,16 +97,16 @@ void ParseListener::exitMember_stmt(KnifeParser::Member_stmtContext* ctx)
         if (a->getText() != ",") // TODO: exclude comma more elegantly
         {
             stmt.args.push_back(a->getText());
-            os << "MemberStatment arg ";
+            //os << "MemberStatment arg ";
             auto* arg_expr = get_expr(
                 static_cast<antlr4::ParserRuleContext*>(a));
             // TODO: store arg_expr in stmt
-            arg_expr->print(os);
-            os << "\n";
+            //arg_expr->print(os);
+            //os << "\n";
         }
         else
         {
-            std::cout << "Found comma\n";
+            //std::cout << "Found comma\n";
         }
     }
     program->last_relation().add_statement(stmt);
@@ -133,8 +149,8 @@ void ParseListener::put_binop(std::string op,
     auto expr = new lang::BinOpExpr(op, lhs_expr, rhs_expr);
     put_expr(expr, ctx);
 
-    log_database->update_expression_parent(lhs_expr, expr);
-    log_database->update_expression_parent(rhs_expr, expr);
+    logger->update_expression_parent(lhs_expr, expr);
+    logger->update_expression_parent(rhs_expr, expr);
 }
 
 void ParseListener::exitDotExpr(KnifeParser::DotExprContext* ctx)
@@ -195,7 +211,7 @@ void ParseListener::exitCall_expression(KnifeParser::Call_expressionContext* ctx
     put_expr(expr, ctx);
 
     for (auto arg : params)
-        log_database->update_expression_parent(arg, expr);
+        logger->update_expression_parent(arg, expr);
 }
 
 void ParseListener::exitParenExpr(KnifeParser::ParenExprContext* ctx)
@@ -221,11 +237,11 @@ void ParseListener::put_expr(lang::Expression const* expr,
 {
     expr_map[ctx] = expr;
 
-    log_database->insert_expression(expr, ctx);
+    logger->insert_expression(expr, ctx);
 
-    auto& os = std::cout;
-    os << "\nAfter put, expr_map is now:\n";
-    print_exprs(os);
+    //auto& os = std::cout;
+    //os << "\nAfter put, expr_map is now:\n";
+    //print_exprs(os);
 }
 
 void ParseListener::exitStat(KnifeParser::StatContext*)

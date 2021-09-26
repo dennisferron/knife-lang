@@ -3,17 +3,20 @@
 #include "KnifeParserBaseListener.h"
 #include "lang/Program.hpp"
 #include "lang/Expression.hpp"
-#include "data/LogDatabase.hpp"
+#include "data/ParseLogger.hpp"
 
 #include <stack>
 #include <map>
+
+namespace knife
+{
 
 class ParseListener : public KnifeParserBaseListener
 {
 private:
     KnifeParser* parser;
     lang::Program* program;
-    data::LogDatabase* log_database;
+    data::ParseLogger* logger;
 
     std::map<
         antlr4::ParserRuleContext const*,
@@ -29,7 +32,7 @@ private:
     void print_exprs(std::ostream& os);
 
 public:
-    ParseListener(KnifeParser* parser, lang::Program* program, data::LogDatabase* log_database);
+    ParseListener(KnifeParser* parser, lang::Program* program, data::ParseLogger* logger);
 
     virtual void enterEveryRule(antlr4::ParserRuleContext* ctx) override;
     virtual void exitStat(KnifeParser::StatContext * /*ctx*/) override;
@@ -60,4 +63,4 @@ public:
     virtual void exitIdentifier(KnifeParser::IdentifierContext * ctx) override;
 };
 
-
+}

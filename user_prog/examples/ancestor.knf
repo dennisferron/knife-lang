@@ -1,4 +1,4 @@
-relation TestSql(x : T)
+relation TestSql(a : Person, b : Person)
 {
     let foo = {| SQL
         select * from tbl;

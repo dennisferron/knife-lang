@@ -8,10 +8,15 @@ namespace lang
 {
     struct LetStatement
     {
+        std::string name;
+        std::string type;
+        std::string init;
     };
 
     struct FreshStatement
     {
+        std::string name;
+        std::string type;
     };
 
     struct YieldStatement

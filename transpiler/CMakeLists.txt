@@ -30,16 +30,59 @@ add_custom_command(
         COMMENT "Running ANTLR4 (Java) to generate the Expr parser."
 )
 
-add_executable(transpiler main.cpp ${EXPR_LEXER_OUTPUTS} ${EXPR_PARSER_OUTPUTS} ${SUBST_GEN_OUTPUTS} ParseListener.cpp ParseListener.hpp lang/Relation.cpp lang/Relation.hpp lang/Program.cpp lang/Program.hpp Json.cpp Json.hpp outp/Output.cpp outp/Output.hpp lang/Statement.cpp lang/Statement.hpp outp/StepCase.cpp outp/StepCase.hpp outp/RelationClass.cpp outp/RelationClass.hpp outp/ProgramNamespace.cpp outp/ProgramNamespace.hpp Transform.cpp Transform.hpp lang/Expression.cpp lang/Expression.hpp data/LogDatabase.cpp data/LogDatabase.hpp)
-target_link_libraries(transpiler antlr4_static sqlite_lib)
+add_library(knife_lib SHARED
+        ${EXPR_LEXER_OUTPUTS}
+        ${EXPR_PARSER_OUTPUTS}
+        ${SUBST_GEN_OUTPUTS}
+        ParseListener.cpp
+        ParseListener.hpp
+        lang/Relation.cpp
+        lang/Relation.hpp
+        lang/Program.cpp
+        lang/Program.hpp
+        Json.cpp
+        Json.hpp
+        outp/Output.cpp
+        outp/Output.hpp
+        lang/Statement.cpp
+        lang/Statement.hpp
+        outp/StepCase.cpp
+        outp/StepCase.hpp
+        outp/RelationClass.cpp
+        outp/RelationClass.hpp
+        outp/ProgramNamespace.cpp
+        outp/ProgramNamespace.hpp
+        Transform.cpp
+        Transform.hpp
+        lang/Expression.cpp
+        lang/Expression.hpp
+        data/LogDatabase.cpp
+        data/LogDatabase.hpp
+        Compiler.cpp
+        Compiler.hpp
+        CompilerImpl.cpp
+        CompilerImpl.hpp
+        KnifeParserContext.cpp
+        KnifeParserContext.hpp
+        KnifeParserContextImpl.cpp
+        KnifeParserContextImpl.hpp
+        data/ParseLogger.cpp
+        data/ParseLogger.hpp
+        knife-exports.hpp
+        knife-exports.cpp Outputter.cpp Outputter.hpp OutputterImpl.cpp OutputterImpl.hpp)
+target_link_libraries(knife_lib antlr4_static sqlite_lib)
 
-target_include_directories(transpiler
+add_executable(transpiler main.cpp)
+target_link_libraries(transpiler knife_lib)
+
+target_include_directories(knife_lib
+        INTERFACE ../transpiler
         PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
         )
 
-set(extra_static_compile_flags "-DUSE_UTF8_INSTEAD_OF_CODECVT -DANTLR4CPP_STATIC")
-
-set_target_properties(transpiler PROPERTIES COMPILE_FLAGS ${extra_static_compile_flags})
+target_compile_options(knife_lib
+    PRIVATE -DUSE_UTF8_INSTEAD_OF_CODECVT -DANTLR4CPP_STATIC
+    PUBLIC -DKNIFE_LIB_SHARED)
 
 set(ANTLR_JAVA_OPTIONS -o ${CMAKE_CURRENT_BINARY_DIR})
 

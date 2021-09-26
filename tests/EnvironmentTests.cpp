@@ -1,22 +1,6 @@
 #include "boost/test/unit_test.hpp"
 #include "Environment.hpp"
-
-namespace std
-{
-    ostream& operator <<(ostream& os, nullopt_t const&)
-    {
-        return os << "empty";
-    }
-
-    template <typename T>
-    ostream& operator <<(ostream& os, optional<T> value)
-    {
-        if (value)
-            return os << value;
-        else
-            return os << "empty";
-    }
-}
+#include "Utility.hpp"
 
 BOOST_AUTO_TEST_SUITE(EnvironmentTests)
 

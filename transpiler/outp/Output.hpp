@@ -3,16 +3,15 @@
 #include "../Json.hpp"
 #include "ProgramNamespace.hpp"
 
-#include <fstream>
+#include <ostream>
 #include <string>
 
 class Output
 {
 protected:
-    std::ofstream ofs;
     JsonDocument document;
 
-    Output(std::string file_name);
+    Output(std::ostream& ofs);
 
     void demo(JsonObject root);
     void write(JsonArray& arr, outp::RelationClass const& relation);
@@ -42,7 +41,7 @@ private:
     std::string base_name;
 
 public:
-    OutputHeader(std::string base_name);
+    OutputHeader(std::ostream& ofs, std::string base_name);
     void write(outp::ProgramNamespace const& program);
 };
 
@@ -52,7 +51,7 @@ private:
     std::string base_name;
 
 public:
-    OutputSource(std::string base_name);
+    OutputSource(std::ostream& ofs, std::string base_name);
     void write(outp::ProgramNamespace const& program);
 };
 
@@ -62,6 +61,6 @@ private:
     std::string base_name;
 
 public:
-    OutputDbInit(std::string base_name);
+    OutputDbInit(std::ostream& ofs, std::string base_name);
     void write(outp::ProgramNamespace const& program);
 };

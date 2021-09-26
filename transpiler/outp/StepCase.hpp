@@ -22,6 +22,7 @@ namespace outp
     {
         std::string var_name;
         std::string type;
+        std::string comment;
     };
 
     struct Case_InitSubRel

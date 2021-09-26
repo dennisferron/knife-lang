@@ -45,8 +45,8 @@ public:
 
 // This is used to declare both param (constructor) lvars
 // and fresh lvars in the relation class.
-decl_lvar(v) ::= <<lvar<$v.type$> $v.name$;>>
-decl_result_var(v) ::= <<$v.type$ $v.name$;>>
+decl_lvar(v) ::= <<lvar<$v.type$> $v.name$; // $v.comment$>>
+decl_result_var(v) ::= <<$v.type$ $v.name$; // $v.comment$>>
 
 decl_mbr(m) ::= <<$m.type$* $m.name$ = nullptr;>>
 

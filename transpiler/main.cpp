@@ -1,29 +1,31 @@
-#include "antlr4-runtime.h"
-#include "KnifeLexer.h"
-#include "KnifeParser.h"
-#include "ParseListener.hpp"
-#include "outp/Output.hpp"
-#include "Transform.hpp"
-#include "data/LogDatabase.hpp"
+#include "knife-exports.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
-// We want to be warned about ambiguous parses while developing grammar,
-// so using DiagnosticErrorListener in place of BaseErrorListener.
-class CerrErrorListener : public antlr4::DiagnosticErrorListener
+#include <chrono>
+#include <sstream>
+
+// Generate a unique file name so parallel builds don't
+// try to log to the same database file.
+std::string generate_log_db_name(std::string base_name)
 {
-    virtual void syntaxError(
-            antlr4::Recognizer* recognizer,
-            antlr4::Token* offendingSymbol,
-            size_t line,
-            size_t charPositionInLine,
-            const std::string& msg,
-            std::exception_ptr e) override
+    std::stringstream ss;
+    ss << base_name;
+    ss << "_" << std::hex;
+
     {
-        std::cerr << "Error on Line(" << line << ":" << charPositionInLine << ") Error(" << msg << ")";
+        using namespace std::chrono;
+        auto usec_since_epoch = duration_cast<microseconds>(
+                system_clock::now().time_since_epoch()).count();
+        ss << usec_since_epoch;
     }
-};
+
+    ss << ".db";
+    return ss.str();
+}
+
 
 enum class ArgMode
 {
@@ -31,6 +33,8 @@ enum class ArgMode
     Mode_o,
     Mode_i
 };
+
+using namespace knife;
 
 int main(int argc, char* argv[])
 {
@@ -87,98 +91,45 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    std::string compile_log_file = output_base_name + "-compile.db";
-    data::LogDatabase db(compile_log_file);
+    std::string compile_log_file = generate_log_db_name(output_base_name);
+    data::ParseLogger* logger = create_db_logger(compile_log_file);
 
-    // Information gleaned by the parse listener on all
-    // of the input files will be accumulated in this object.
     lang::Program program;
 
     bool first_file = true;
-
-    for (std::string knife_file : input_files)
+    for (std::string input_file : input_files)
     {
-        antlr4::ANTLRFileStream knife_strm(knife_file);
-
-        if (knife_strm.size() == 0)
-        {
-            std::cerr << "Unable to open expr file (or file is empty): "
-                      << knife_file << "\n";
-            return -1;
-        }
-
-        KnifeLexer knife_lexer(&knife_strm);
+        KnifeParserContext* parser_context = create_file_parser(logger, input_file);
 
         if (first_file)
         {
-            db.begin_transaction();
-            auto const& tok_names = knife_lexer.getTokenNames();
-
-            for (std::size_t i=0; i<tok_names.size(); i++)
-            {
-                std::string name = tok_names[i];
-                db.insert_token_name(i, name);
-            }
-
-            db.commit_transaction();
-
-            db.begin_transaction();
-            auto const& rule_names = knife_lexer.getRuleNames();
-
-            for (std::size_t i=0; i<rule_names.size(); i++)
-            {
-                std::string name = rule_names[i];
-                db.insert_rule_name(i, name);
-            }
-
-            db.commit_transaction();
-
+            parser_context->log_token_names();
             first_file = false;
         }
 
-        CerrErrorListener knife_error_listener;
-        knife_lexer.removeErrorListeners();
-        knife_lexer.addErrorListener(&knife_error_listener);
-
-        antlr4::CommonTokenStream knife_tokens(&knife_lexer);
-
-        db.begin_transaction();
-
-        knife_tokens.fill();
-        for (auto knife_token : knife_tokens.getTokens())
-        {
-            std::cout << knife_token->toString() << std::endl;
-            db.insert_token(knife_token);
-        }
-
-        db.commit_transaction();
-
-        KnifeParser knife_parser(&knife_tokens);
-        antlr4::tree::ParseTree* knife_tree = knife_parser.prog();
-        //std::cout << knife_tree->toStringTree(&knife_parser, true) << std::endl;
-
-        knife_parser.removeErrorListeners(); // remove ConsoleErrorListener
-        knife_parser.addErrorListener(&knife_error_listener);
-
-        ParseListener listener(&knife_parser, &program, &db);
-
-        antlr4::tree::ParseTreeWalker walker;
-        walker.walk(&listener, knife_tree); // initiate walk of tree with listener
-
-        if (auto errs = knife_parser.getNumberOfSyntaxErrors())
-        {
-            std::cerr << errs << " syntax errors." << std::endl;
-            return -1;
-        }
+        // TODO: add to program instead of replacing it.
+        program = parser_context->parse();
     }
 
-    outp::ProgramNamespace program_output = transform(program);
+    Compiler* compiler = create_compiler(logger);
 
-    OutputHeader(output_base_name).write(program_output);
-    OutputSource(output_base_name).write(program_output);
-    OutputDbInit(output_base_name).write(program_output);
+    outp::ProgramNamespace prog_ns = compiler->transform(program);
 
-    std::cout << "Transpiler finished." << std::endl;
+    Outputter* outputter = create_outputter();
+
+    std::ofstream ofs_header(output_base_name + "_header.json");
+    outputter->output_header(ofs_header, prog_ns, output_base_name);
+    ofs_header.close();
+
+    std::ofstream ofs_source(output_base_name + "_source.json");
+    outputter->output_source(ofs_source, prog_ns, output_base_name);
+    ofs_source.close();
+
+    std::ofstream ofs_db_init(output_base_name + "_db_init.json");
+    outputter->output_db_init(ofs_db_init, prog_ns, output_base_name);
+    ofs_db_init.close();
+
+    std::cout << "Knife compiler finished." << std::endl;
 
     return 0;
 }

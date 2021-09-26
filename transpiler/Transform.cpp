@@ -1,5 +1,8 @@
 #include "Transform.hpp"
 
+namespace knife
+{
+
 outp::ProgramNamespace transform(const lang::Program& inp_prog)
 {
     outp::ProgramNamespace result;
@@ -13,11 +16,16 @@ outp::ProgramNamespace transform(const lang::Program& inp_prog)
 struct TransformStatement
 {
     std::vector<lang::MemberStatement> members;
+    std::vector<lang::FreshStatement> fresh_vars;
 
     void operator()(...) {}
     void operator()(lang::MemberStatement const& stmt)
     {
         members.push_back(stmt);
+    }
+    void operator()(lang::FreshStatement const& stmt)
+    {
+        fresh_vars.push_back(stmt);
     }
 };
 
@@ -44,17 +52,23 @@ outp::RelationClass transform(const lang::Relation& inp_rel)
 
     for (auto const& p : inp_rel.get_params())
     {
-        outp_rel.param_lvars.push_back(outp::ParamVar {p.name, p.type});
+        outp_rel.param_lvars.push_back(outp::ParamVar {p.name, p.type, "from param_lvars"});
     }
 
-    outp_rel.fresh_lvars =
+    for (auto frsh_stmt : tr_stmt.fresh_vars)
     {
-        {"x", "Person"}, {"y", "Person"}
-    };
+        outp::FreshVar frsh_var =
+        {
+            frsh_stmt.name,
+            frsh_stmt.type,
+            "from fresh var"
+        };
+        outp_rel.fresh_lvars.push_back(frsh_var);
+    }
 
     for (auto const& p : inp_rel.get_result_vars())
     {
-        outp_rel.result_vars.push_back(outp::ResultVar {p.name, p.type});
+        outp_rel.result_vars.push_back(outp::ResultVar {p.name, p.type, "from result_vars"});
     }
 
     // TODO: convert tr_stmt into StepCases
@@ -78,4 +92,6 @@ outp::RelationClass transform(const lang::Relation& inp_rel)
     outp_rel.step_cases.push_back(case1);
 
     return outp_rel;
+}
+
 }
