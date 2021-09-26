@@ -4,42 +4,41 @@
 using namespace knife;
 
 KnifeParserContextImpl::KnifeParserContextImpl(data::ParseLogger* logger, antlr4::CharStream* input)
-    : logger(logger), knife_lexer(input)
+: logger(logger), knife_lexer(input), knife_tokens(&knife_lexer)
 {
 }
 
-lang::Program KnifeParserContextImpl::parse()
+void KnifeParserContextImpl::parse(
+        std::function<
+            antlr4::tree::ParseTree*(KnifeParser&)
+        > rule_selector
+    )
 {
-    CerrErrorListener knife_error_listener;
     knife_lexer.removeErrorListeners();
     knife_lexer.addErrorListener(&knife_error_listener);
 
     antlr4::CommonTokenStream knife_tokens(&knife_lexer);
+    knife_tokens.fill();
 
     logger->begin_transaction();
-
-    knife_tokens.fill();
     for (auto knife_token : knife_tokens.getTokens())
     {
         //std::cout << knife_token->toString() << std::endl;
         logger->insert_token(knife_token);
     }
-
     logger->commit_transaction();
 
     knife_parser.reset(new KnifeParser(&knife_tokens));
-    antlr4::tree::ParseTree* knife_tree = knife_parser->prog();
-    //std::cout << knife_tree->toStringTree(&knife_parser, true) << std::endl;
 
     knife_parser->removeErrorListeners(); // remove ConsoleErrorListener
     knife_parser->addErrorListener(&knife_error_listener);
 
-    // TODO: This could be lang::TranslationUnit owned by listener.
-    lang::Program program;
-    ParseListener listener(knife_parser.get(), &program, logger);
+    listener.reset(new ParseListener(knife_parser.get(), logger));
+
+    auto start_rule = rule_selector(*knife_parser);
 
     antlr4::tree::ParseTreeWalker walker;
-    walker.walk(&listener, knife_tree); // initiate walk of tree with listener
+    walker.walk(listener.get(), start_rule); // initiate walk of tree with listener
 
     if (auto errs = knife_parser->getNumberOfSyntaxErrors())
     {
@@ -47,8 +46,6 @@ lang::Program KnifeParserContextImpl::parse()
         msg << errs << " syntax errors." << std::endl;
         throw std::runtime_error(msg.str());
     }
-
-    return program;
 }
 
 void KnifeParserContextImpl::log_token_names()
@@ -74,4 +71,16 @@ void KnifeParserContextImpl::log_token_names()
     }
 
     logger->commit_transaction();
+}
+
+lang::Program KnifeParserContextImpl::parse_program()
+{
+    parse([](KnifeParser& parser){ return parser.prog(); });
+    return listener->get_program();
+}
+
+lang::Expression const& KnifeParserContextImpl::parse_expression()
+{
+    parse([](auto& parser){ return parser.expr(); });
+    return listener->get_root_expr();
 }

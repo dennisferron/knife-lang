@@ -2,6 +2,7 @@
 #include "knife-exports.hpp"
 
 #include "data/LogDatabase.hpp"
+#include "data/NullLogger.hpp"
 #include "KnifeParserContextImpl.hpp"
 #include "CompilerImpl.hpp"
 #include "OutputterImpl.hpp"
@@ -23,10 +24,14 @@ namespace knife
         return new KnifeParserContextImpl(logger, knife_strm);
     }
 
-    knife::KnifeParserContext* create_string_parser(knife::data::ParseLogger* logger, std::string input_text)
+    knife::KnifeParserContext* create_string_parser(std::string input_text, knife::data::ParseLogger* logger)
     {
+        static knife::data::NullLogger null_logger;
+
         auto stream = new antlr4::ANTLRInputStream(input_text);
-        return new KnifeParserContextImpl(logger, stream);
+        return new KnifeParserContextImpl(
+                logger ? logger : &null_logger,
+                stream);
     }
 
     knife::data::ParseLogger* create_db_logger(std::string db_file_name)

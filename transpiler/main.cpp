@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
         }
 
         // TODO: add to program instead of replacing it.
-        program = parser_context->parse();
+        program = parser_context->parse_program();
     }
 
     Compiler* compiler = create_compiler(logger);

@@ -15,7 +15,7 @@ class ParseListener : public KnifeParserBaseListener
 {
 private:
     KnifeParser* parser;
-    lang::Program* program;
+    lang::Program program;
     data::ParseLogger* logger;
 
     std::map<
@@ -23,7 +23,7 @@ private:
         lang::Expression const*
     > expr_map;
 
-    lang::Expression const* get_expr(antlr4::ParserRuleContext* ctx);
+    lang::Expression const* get_expr(antlr4::ParserRuleContext* ctx) const;
     void put_expr(lang::Expression const* expr,
                   antlr4::ParserRuleContext* ctx);
     void put_binop(std::string op, antlr4::ParserRuleContext* ctx,
@@ -32,7 +32,19 @@ private:
     void print_exprs(std::ostream& os);
 
 public:
-    ParseListener(KnifeParser* parser, lang::Program* program, data::ParseLogger* logger);
+    ParseListener(KnifeParser* parser, data::ParseLogger* logger);
+
+    lang::Program const& get_program() const { return program; }
+
+    lang::Expression const& get_root_expr() const
+    {
+        auto ctx = parser->expr();
+
+        if (ctx == nullptr)
+            throw std::logic_error("Did not parse a root expression.");
+
+        return *get_expr(ctx);
+    }
 
     virtual void enterEveryRule(antlr4::ParserRuleContext* ctx) override;
     virtual void exitStat(KnifeParser::StatContext * /*ctx*/) override;

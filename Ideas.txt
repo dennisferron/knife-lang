@@ -2,3 +2,6 @@ Idea for unit testing the output strings:
 	1. embed markers into the comments in the generated code
 	2. extract the markers into some kind of data structure
 	3. assert unit tests on this extraction not the original string.
+
+Idea:
+    Design fluent interface for constructing expected data for tests.

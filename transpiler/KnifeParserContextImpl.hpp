@@ -7,8 +7,9 @@
 #include "outp/Output.hpp"
 #include "Transform.hpp"
 #include "data/ParseLogger.hpp"
-
 #include "KnifeParserContext.hpp"
+
+#include <functional>
 
 namespace knife
 {
@@ -33,14 +34,23 @@ namespace knife
     private:
         data::ParseLogger* logger;
         KnifeLexer knife_lexer;
+        antlr4::CommonTokenStream knife_tokens;
         std::unique_ptr<KnifeParser> knife_parser;
+        CerrErrorListener knife_error_listener;
+        std::unique_ptr<ParseListener> listener;
 
-        void init(std::string input_file);
+        void parse(
+            std::function<
+                antlr4::tree::ParseTree*(KnifeParser&)
+            > rule_selector
+        );
 
     public:
         KnifeParserContextImpl(data::ParseLogger* logger, antlr4::CharStream* input);
-        lang::Program parse() override;
+        lang::Program parse_program() override;
         void log_token_names() override;
+
+        lang::Expression const& parse_expression() override;
     };
 
 }

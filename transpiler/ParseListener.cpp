@@ -2,8 +2,8 @@
 
 using namespace knife;
 
-ParseListener::ParseListener(KnifeParser* parser, lang::Program* program, data::ParseLogger* logger)
-    : parser(parser), program(program), logger(logger)
+ParseListener::ParseListener(KnifeParser* parser, data::ParseLogger* logger)
+    : parser(parser), logger(logger)
 {
 }
 
@@ -41,7 +41,7 @@ void ParseListener::enterQuasiQuoteCsv(KnifeParser::QuasiQuoteCsvContext* ctx)
 void ParseListener::enterRelation_name(KnifeParser::Relation_nameContext* ctx)
 {
     std::string id = ctx->IDENT()->getText();
-    program->relations.push_back(lang::Relation(id));
+    program.relations.push_back(lang::Relation(id));
 }
 
 void ParseListener::enterRelation_param(KnifeParser::Relation_paramContext* ctx)
@@ -50,7 +50,7 @@ void ParseListener::enterRelation_param(KnifeParser::Relation_paramContext* ctx)
     std::string type = "";
     if (ctx->IDENT(1))
         type = ctx->IDENT(1)->getText();
-    program->last_relation().add_param(lang::ParamVar {name, type});
+    program.last_relation().add_param(lang::ParamVar {name, type});
 }
 
 void ParseListener::enterLet_stmt(KnifeParser::Let_stmtContext* ctx)
@@ -62,7 +62,7 @@ void ParseListener::enterLet_stmt(KnifeParser::Let_stmtContext* ctx)
         ctx->var_init->getText()  // TODO: get the expr
     };
 
-    program->last_relation().add_statement(stmt);
+    program.last_relation().add_statement(stmt);
 }
 
 void ParseListener::enterFresh_stmt(KnifeParser::Fresh_stmtContext* ctx)
@@ -73,13 +73,13 @@ void ParseListener::enterFresh_stmt(KnifeParser::Fresh_stmtContext* ctx)
         ctx->var_type ? ctx->var_type->getText() : ""
     };
 
-    program->last_relation().add_statement(stmt);
+    program.last_relation().add_statement(stmt);
 }
 
 void ParseListener::enterYield_stmt(KnifeParser::Yield_stmtContext* ctx)
 {
     // TODO: get the expr
-    program->last_relation().add_statement(lang::YieldStatement());
+    program.last_relation().add_statement(lang::YieldStatement());
 }
 
 void ParseListener::exitMember_stmt(KnifeParser::Member_stmtContext* ctx)
@@ -109,10 +109,10 @@ void ParseListener::exitMember_stmt(KnifeParser::Member_stmtContext* ctx)
             //std::cout << "Found comma\n";
         }
     }
-    program->last_relation().add_statement(stmt);
+    program.last_relation().add_statement(stmt);
 }
 
-lang::Expression const* ParseListener::get_expr(antlr4::ParserRuleContext* ctx)
+lang::Expression const* ParseListener::get_expr(antlr4::ParserRuleContext* ctx) const
 {
     auto find_result = expr_map.find(ctx);
 
@@ -255,3 +255,4 @@ void ParseListener::exitIdentifier(KnifeParser::IdentifierContext* ctx)
     auto expr = new lang::IdExpr(identifier);
     put_expr(expr, ctx);
 }
+
