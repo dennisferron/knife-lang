@@ -26,6 +26,7 @@ namespace knife
     }
 
     KNIFE_API knife::data::ParseLogger* create_db_logger(std::string db_file_name);
+    KNIFE_API knife::data::ParseLogger* create_null_logger();
     KNIFE_API knife::KnifeParserContext* create_file_parser(knife::data::ParseLogger* logger, std::string file_name);
     KNIFE_API knife::KnifeParserContext* create_string_parser(std::string input_text, knife::data::ParseLogger* logger=nullptr);
     KNIFE_API knife::Compiler* create_compiler(knife::data::ParseLogger* logger);

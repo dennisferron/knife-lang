@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(tests)
+project(knife-tests)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -11,10 +11,11 @@ list(APPEND CMAKE_MODULE_PATH
 
 include(UseBoost)
 
-add_executable(tests
+add_executable(knife-tests
         TestMain.cpp
         EnvironmentTests.cpp
         CompilationTests.cpp
         Utility.hpp)
 
-target_link_libraries(tests PUBLIC basekit knife_lib)
+set_target_properties(knife-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/compiler")
+target_link_libraries(knife-tests PUBLIC basekit knife_lib)

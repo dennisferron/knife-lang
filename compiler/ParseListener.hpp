@@ -23,6 +23,8 @@ private:
         lang::Expression const*
     > expr_map;
 
+    lang::Expression const* last_expr = nullptr;
+
     lang::Expression const* get_expr(antlr4::ParserRuleContext* ctx) const;
     void put_expr(lang::Expression const* expr,
                   antlr4::ParserRuleContext* ctx);
@@ -38,12 +40,7 @@ public:
 
     lang::Expression const& get_root_expr() const
     {
-        auto ctx = parser->expr();
-
-        if (ctx == nullptr)
-            throw std::logic_error("Did not parse a root expression.");
-
-        return *get_expr(ctx);
+        return *last_expr;
     }
 
     virtual void enterEveryRule(antlr4::ParserRuleContext* ctx) override;

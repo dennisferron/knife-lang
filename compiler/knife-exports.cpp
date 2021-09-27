@@ -34,6 +34,11 @@ namespace knife
                 stream);
     }
 
+    knife::data::ParseLogger* create_null_logger()
+    {
+        return new data::NullLogger();
+    }
+
     knife::data::ParseLogger* create_db_logger(std::string db_file_name)
     {
         return new data::LogDatabase(db_file_name);

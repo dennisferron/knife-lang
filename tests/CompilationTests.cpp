@@ -8,11 +8,20 @@ BOOST_AUTO_TEST_SUITE(CompilationTests)
     {
         auto parser = knife::create_string_parser(
         R"(
-            A(x) & B(y)
+            42
         )");
-//        BOOST_TEST( false );
-//        BOOST_TEST( parser->parse_expression().equals(
-//                lang::IntExpr {42}) );
+        BOOST_TEST( parser->parse_expression().equals(
+                lang::IntExpr {42}) );
+    }
+
+    BOOST_AUTO_TEST_CASE(test2)
+    {
+    auto parser = knife::create_string_parser(
+            R"(
+            A(x) & B(y)
+            )");
+    BOOST_TEST( parser->parse_expression().equals(
+            lang::IntExpr {42}) );
     }
 
 BOOST_AUTO_TEST_SUITE_END()

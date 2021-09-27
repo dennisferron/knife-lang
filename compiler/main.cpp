@@ -92,7 +92,8 @@ int main(int argc, char* argv[])
     }
 
     std::string compile_log_file = generate_log_db_name(output_base_name);
-    data::ParseLogger* logger = create_db_logger(compile_log_file);
+    data::ParseLogger* logger // = create_db_logger(compile_log_file);
+            = create_null_logger();
 
     lang::Program program;
 

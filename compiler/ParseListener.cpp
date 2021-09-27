@@ -236,6 +236,7 @@ void ParseListener::put_expr(lang::Expression const* expr,
                              antlr4::ParserRuleContext* ctx)
 {
     expr_map[ctx] = expr;
+    last_expr = expr;
 
     logger->insert_expression(expr, ctx);
 
