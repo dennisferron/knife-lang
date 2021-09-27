@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(transpiler)
+project(knife-compiler)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -72,11 +72,11 @@ add_library(knife_lib SHARED
         knife-exports.cpp Outputter.cpp Outputter.hpp OutputterImpl.cpp OutputterImpl.hpp data/NullLogger.cpp data/NullLogger.hpp)
 target_link_libraries(knife_lib antlr4_static sqlite_lib)
 
-add_executable(transpiler main.cpp)
-target_link_libraries(transpiler knife_lib)
+add_executable(knife-compiler main.cpp)
+target_link_libraries(knife-compiler knife_lib)
 
 target_include_directories(knife_lib
-        INTERFACE ../transpiler
+        INTERFACE .
         PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
         )
 

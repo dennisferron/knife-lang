@@ -41,15 +41,15 @@ target_include_directories(user_prog PUBLIC
 target_link_libraries(user_prog user_lib)
 
 add_custom_command(
-    COMMAND transpiler
+    COMMAND knife-compiler
         -o ${transpile_base_name}
         -i ${CMAKE_CURRENT_SOURCE_DIR} ${transpile_inputs}
-    DEPENDS ${transpile_inputs} transpiler
+    DEPENDS ${transpile_inputs} knife-compiler
     OUTPUT
         ${json_header}
         ${json_source}
         ${json_db_init}
-    COMMENT "Running transpiler to generate JSON data for templates."
+    COMMENT "Running Knife compiler to generate JSON data for templates."
 )
 
 add_custom_command(

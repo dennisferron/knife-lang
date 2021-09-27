@@ -9,7 +9,7 @@ list(APPEND CMAKE_MODULE_PATH
 
 add_subdirectory(sqlite3)
 add_subdirectory(antlr4-runtime)
-add_subdirectory(transpiler)
+add_subdirectory(compiler)
 add_subdirectory(basekit)
 add_subdirectory(user_prog)
 add_subdirectory(tests)
