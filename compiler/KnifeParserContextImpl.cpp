@@ -8,16 +8,11 @@ KnifeParserContextImpl::KnifeParserContextImpl(data::ParseLogger* logger, antlr4
 {
 }
 
-void KnifeParserContextImpl::parse(
-        std::function<
-            antlr4::tree::ParseTree*(KnifeParser&)
-        > rule_selector
-    )
+void KnifeParserContextImpl::parse()
 {
     knife_lexer.removeErrorListeners();
     knife_lexer.addErrorListener(&knife_error_listener);
 
-    antlr4::CommonTokenStream knife_tokens(&knife_lexer);
     knife_tokens.fill();
 
     logger->begin_transaction();
@@ -34,9 +29,10 @@ void KnifeParserContextImpl::parse(
     knife_parser->addErrorListener(&knife_error_listener);
 
     listener.reset(new ParseListener(knife_parser.get(), logger));
+}
 
-    auto start_rule = rule_selector(*knife_parser);
-
+void KnifeParserContextImpl::walk(antlr4::tree::ParseTree* start_rule)
+{
     antlr4::tree::ParseTreeWalker walker;
     walker.walk(listener.get(), start_rule); // initiate walk of tree with listener
 
@@ -75,12 +71,14 @@ void KnifeParserContextImpl::log_token_names()
 
 lang::Program KnifeParserContextImpl::parse_program()
 {
-    parse([](KnifeParser& parser){ return parser.prog(); });
+    parse();
+    walk(knife_parser->prog());
     return listener->get_program();
 }
 
 lang::Expression const& KnifeParserContextImpl::parse_expression()
 {
-    parse([](auto& parser){ return parser.expr(); });
+    parse();
+    walk(knife_parser->expr());
     return listener->get_root_expr();
 }

@@ -9,7 +9,6 @@
 #include "data/ParseLogger.hpp"
 #include "KnifeParserContext.hpp"
 
-#include <functional>
 
 namespace knife
 {
@@ -39,11 +38,8 @@ namespace knife
         CerrErrorListener knife_error_listener;
         std::unique_ptr<ParseListener> listener;
 
-        void parse(
-            std::function<
-                antlr4::tree::ParseTree*(KnifeParser&)
-            > rule_selector
-        );
+        void parse();
+        void walk(antlr4::tree::ParseTree* start_rule);
 
     public:
         KnifeParserContextImpl(data::ParseLogger* logger, antlr4::CharStream* input);

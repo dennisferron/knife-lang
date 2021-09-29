@@ -98,7 +98,7 @@ void ParseListener::exitMember_stmt(KnifeParser::Member_stmtContext* ctx)
         {
             stmt.args.push_back(a->getText());
             //os << "MemberStatment arg ";
-            auto* arg_expr = get_expr(
+            auto arg_expr = get_expr(
                 static_cast<antlr4::ParserRuleContext*>(a));
             // TODO: store arg_expr in stmt
             //arg_expr->print(os);
@@ -112,7 +112,7 @@ void ParseListener::exitMember_stmt(KnifeParser::Member_stmtContext* ctx)
     program.last_relation().add_statement(stmt);
 }
 
-lang::Expression const* ParseListener::get_expr(antlr4::ParserRuleContext* ctx) const
+lang::Expression const& ParseListener::get_expr(antlr4::ParserRuleContext* ctx) const
 {
     auto find_result = expr_map.find(ctx);
 
@@ -146,7 +146,8 @@ void ParseListener::put_binop(std::string op,
 {
     auto lhs_expr = get_expr(lhs);
     auto rhs_expr = get_expr(rhs);
-    auto expr = new lang::BinOpExpr(op, lhs_expr, rhs_expr);
+    lang::Expression expr(
+        std::make_unique<lang::BinOpExpr>(op, lhs_expr, rhs_expr));
     put_expr(expr, ctx);
 
     logger->update_expression_parent(lhs_expr, expr);
@@ -161,13 +162,13 @@ void ParseListener::exitDotExpr(KnifeParser::DotExprContext* ctx)
 void ParseListener::exitIntExpr(KnifeParser::IntExprContext* ctx)
 {
     int value = std::stoi(ctx->getText());
-    auto expr = new lang::IntExpr(value);
+    lang::Expression expr(std::make_unique<lang::IntExpr>(value));
     put_expr(expr, ctx);
 }
 
 void ParseListener::exitQuasiquoteExpr(KnifeParser::QuasiquoteExprContext* ctx)
 {
-    auto expr = new lang::QuasiquoteExpr();
+    lang::Expression expr(std::make_unique<lang::QuasiquoteExpr>());
     put_expr(expr, ctx);
 }
 
@@ -195,7 +196,7 @@ void ParseListener::exitCall_expression(KnifeParser::Call_expressionContext* ctx
             ->call_param_list()
             ->children;
 
-    std::vector<lang::Expression const*> params;
+    std::vector<lang::Expression> params;
 
     for (auto a : children)
     {
@@ -207,7 +208,8 @@ void ParseListener::exitCall_expression(KnifeParser::Call_expressionContext* ctx
         }
     }
 
-    auto expr = new lang::CallExpr(method_name, params);
+    lang::Expression expr(
+        std::make_unique<lang::CallExpr>(method_name, params));
     put_expr(expr, ctx);
 
     for (auto arg : params)
@@ -229,10 +231,10 @@ void ParseListener::exitIdExpr(KnifeParser::IdExprContext* ctx)
 void ParseListener::print_exprs(std::ostream& os)
 {
     for (auto kv : expr_map)
-        os << *(kv.second) << "\n";
+        os << kv.second << "\n";
 }
 
-void ParseListener::put_expr(lang::Expression const* expr,
+void ParseListener::put_expr(lang::Expression expr,
                              antlr4::ParserRuleContext* ctx)
 {
     expr_map[ctx] = expr;
@@ -253,7 +255,8 @@ void ParseListener::exitStat(KnifeParser::StatContext*)
 void ParseListener::exitIdentifier(KnifeParser::IdentifierContext* ctx)
 {
     std::string identifier = ctx->getText();
-    auto expr = new lang::IdExpr(identifier);
+    lang::Expression expr(
+        std::make_unique<lang::IdExpr>(identifier));
     put_expr(expr, ctx);
 }
 

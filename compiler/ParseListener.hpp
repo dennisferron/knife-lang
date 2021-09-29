@@ -20,13 +20,13 @@ private:
 
     std::map<
         antlr4::ParserRuleContext const*,
-        lang::Expression const*
+        lang::Expression
     > expr_map;
 
-    lang::Expression const* last_expr = nullptr;
+    lang::Expression last_expr;
 
-    lang::Expression const* get_expr(antlr4::ParserRuleContext* ctx) const;
-    void put_expr(lang::Expression const* expr,
+    lang::Expression const& get_expr(antlr4::ParserRuleContext* ctx) const;
+    void put_expr(lang::Expression expr,
                   antlr4::ParserRuleContext* ctx);
     void put_binop(std::string op, antlr4::ParserRuleContext* ctx,
                    antlr4::ParserRuleContext* lhs,
@@ -40,7 +40,7 @@ public:
 
     lang::Expression const& get_root_expr() const
     {
-        return *last_expr;
+        return last_expr;
     }
 
     virtual void enterEveryRule(antlr4::ParserRuleContext* ctx) override;

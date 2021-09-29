@@ -8,25 +8,61 @@
 
 namespace lang
 {
-    class Expression
+    class ExprBase
     {
     public:
-        inline virtual ~Expression() {}
+        inline virtual ~ExprBase() {}
         virtual std::ostream& print(std::ostream& os) const = 0;
-        virtual bool equals(Expression const& that) const = 0;
+        virtual bool equals(ExprBase const& that) const = 0;
+        virtual ExprBase const* clone() const = 0;
     };
 
-    inline std::ostream& operator <<(std::ostream& os, Expression const& expr)
+    class Expression
     {
-        return expr.print(os);
-    }
+    private:
+        std::unique_ptr<ExprBase const> expr;
 
-    inline bool operator ==(Expression const& x, Expression const& y)
-    {
-        return x.equals(y);
-    }
+    public:
+        Expression()
+            : expr(nullptr) {}
 
-    class IntExpr : public Expression
+        Expression(std::unique_ptr<ExprBase const> expr)
+            : expr(std::move(expr)) {}
+
+        Expression(Expression const& that)
+            : expr(that.expr ? that.expr->clone() : nullptr)
+        {
+        }
+        
+        Expression& operator=(Expression const& that)
+        {
+            if (this == &that)
+                return *this;
+            else
+            {
+                expr.reset(that.expr ? that.expr->clone() : nullptr);
+                return *this;
+            }
+        }
+
+        friend std::ostream& operator <<(std::ostream& os, Expression const& x)
+        {
+            if (x.expr)
+                return x.expr->print(os);
+            else
+                return os << "<null>";
+        }
+
+        friend bool operator ==(Expression const& x, Expression const& y)
+        {
+            if (x.expr && y.expr) // if both non-null
+                return x.expr->equals(*y.expr); // then deep compare
+            else    // else at least one is null
+                return x.expr == y.expr; // equal if both are null
+        }
+    };
+
+    class IntExpr : public ExprBase
     {
     private:
         int value;
@@ -42,16 +78,21 @@ namespace lang
                 << value << ")";
         }
 
-        bool equals(const Expression& that) const override
+        bool equals(const ExprBase& that) const override
         {
             if (auto p = dynamic_cast<IntExpr const*>(&that))
                 return p->value == this->value;
             else
                 return false;
         }
+
+        const ExprBase* clone() const override
+        {
+            return new IntExpr(value);
+        }
     };
 
-    class QuasiquoteExpr : public Expression
+    class QuasiquoteExpr : public ExprBase
     {
     public:
         virtual std::ostream& print(std::ostream& os) const override
@@ -59,67 +100,67 @@ namespace lang
             return os << "QuasiquoteExpr";
         }
 
-        bool equals(const Expression& that) const override
+        bool equals(const ExprBase& that) const override
         {
             throw std::logic_error("Not implemented: QuasiquoteExpr::equals");
         }
+
+        const ExprBase* clone() const override
+        {
+            return new QuasiquoteExpr();
+        }
     };
 
-    class BinOpExpr : public Expression
+    class BinOpExpr : public ExprBase
     {
     private:
         std::string op;
-        Expression const* lhs;
-        Expression const* rhs;
+        Expression lhs;
+        Expression rhs;
 
     public:
-        BinOpExpr(const std::string& op, const Expression* lhs, const Expression* rhs) :
+        BinOpExpr(const std::string& op,
+                  Expression const& lhs,
+                  Expression const& rhs) :
         op(op), lhs(lhs), rhs(rhs)
         {}
-
-        virtual ~BinOpExpr()
-        {
-            delete lhs;
-            delete rhs;
-        }
 
         virtual std::ostream& print(std::ostream& os) const override
         {
             return os << "(BinOpExpr "
-            << op << " " << *lhs << " "
-            << *rhs << ")";
+                << op << " "
+                << lhs << " "
+                << rhs << ")";
         }
 
-        bool equals(const Expression& that) const override
+        bool equals(const ExprBase& that) const override
         {
             if (auto p = dynamic_cast<BinOpExpr const*>(&that))
             {
                 return p->op == this->op
-                    && *(p->lhs) == *(this->lhs)
-                    && *(p->rhs) == *(this->rhs);
+                    && p->lhs == this->lhs
+                    && p->rhs == this->rhs;
             }
             else
             {
                 return false;
             }
         }
+
+        const ExprBase* clone() const override
+        {
+            return new BinOpExpr(op, lhs, rhs);
+        }
     };
 
-    class CallExpr : public Expression
+    class CallExpr : public ExprBase
     {
     private:
         std::string method_name;
-        std::vector<Expression const*> params;
+        std::vector<Expression> params;
     public:
-        CallExpr(const std::string& methodName, const std::vector<const Expression*>& params) :
-        method_name(methodName), params(params)
-        {}
-
-        virtual ~CallExpr()
-        {
-            for (auto p : params)
-                delete p;
-        }
+        CallExpr(const std::string& methodName, const std::vector<Expression>& params)
+            : method_name(methodName), params(params) {}
 
         virtual std::ostream& print(std::ostream& os) const override
         {
@@ -128,12 +169,12 @@ namespace lang
             << "\\" << params.size();
 
             for (auto p : params)
-                os << " " << *p;
+                os << " " << p;
 
             return os << ")";
         }
 
-        bool equals(const Expression& that) const override
+        bool equals(const ExprBase& that) const override
         {
             if (auto p = dynamic_cast<CallExpr const*>(&that))
             {
@@ -145,9 +186,14 @@ namespace lang
                 return false;
             }
         }
+
+        const ExprBase* clone() const override
+        {
+            return new CallExpr(method_name, params);
+        }
     };
 
-    class IdExpr : public Expression
+    class IdExpr : public ExprBase
     {
     private:
         std::string identifier;
@@ -163,7 +209,7 @@ namespace lang
             << identifier << ")";
         }
 
-        bool equals(const Expression& that) const override
+        bool equals(const ExprBase& that) const override
         {
             if (auto p = dynamic_cast<IdExpr const*>(&that))
             {
@@ -173,6 +219,11 @@ namespace lang
             {
                 return false;
             }
+        }
+
+        const ExprBase* clone() const override
+        {
+            return new IdExpr(identifier);
         }
     };
 }

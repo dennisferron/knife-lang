@@ -43,12 +43,12 @@ namespace knife::data
 
         }
 
-        void insert_expression(const lang::Expression* expr, const antlr4::ParserRuleContext* ctx) override
+        void insert_expression(lang::Expression expr, const antlr4::ParserRuleContext* ctx) override
         {
 
         }
 
-        void update_expression_parent(const lang::Expression* expr, const lang::Expression* parent) override
+        void update_expression_parent(lang::Expression expr, lang::Expression parent) override
         {
 
         }

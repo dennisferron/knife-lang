@@ -20,8 +20,8 @@ namespace knife::data
         virtual void insert_rule_name(std::size_t rule_index, std::string rule_name) = 0;
         virtual void insert_token(antlr4::Token* token) = 0;
         virtual void insert_parse_context(antlr4::ParserRuleContext* ctx) = 0;
-        virtual void insert_expression(lang::Expression const* expr, antlr4::ParserRuleContext const* ctx) = 0;
-        virtual void update_expression_parent(lang::Expression const* expr, lang::Expression const* parent) = 0;
+        virtual void insert_expression(lang::Expression expr, antlr4::ParserRuleContext const* ctx) = 0;
+        virtual void update_expression_parent(lang::Expression expr, lang::Expression parent) = 0;
     };
 
 }

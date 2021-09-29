@@ -270,17 +270,19 @@ void LogDatabase::insert_parse_context(antlr4::ParserRuleContext* ctx)
     sqlite3_reset(stmt);
 }
 
-void LogDatabase::insert_expression(lang::Expression const* expr, antlr4::ParserRuleContext const* ctx)
+void LogDatabase::insert_expression(lang::Expression expr, antlr4::ParserRuleContext const* ctx)
 {
+    throw std::logic_error("Since Expression is now a copyable value, we can no longer use its address as a key.");
+
     auto stmt = stmt_insert_expression;
 
     sqlite3_bind_int64(stmt, 1,
-                       reinterpret_cast<sqlite3_int64>(expr));
+                       reinterpret_cast<sqlite3_int64>(&expr));
 
     sqlite3_bind_int64(stmt, 2,
                        reinterpret_cast<sqlite3_int64>(ctx));
 
-    std::stringstream desc; desc << *expr;
+    std::stringstream desc; desc << expr;
     sqlite3_bind_text(stmt, 3, desc.str().c_str(),
                      desc.str().size(), SQLITE_TRANSIENT);
 
@@ -290,14 +292,16 @@ void LogDatabase::insert_expression(lang::Expression const* expr, antlr4::Parser
     sqlite3_reset(stmt);
 }
 
-void LogDatabase::update_expression_parent(lang::Expression const* expr, lang::Expression const* parent)
+void LogDatabase::update_expression_parent(lang::Expression expr, lang::Expression parent)
 {
+    throw std::logic_error("Since Expression is now a copyable value, we can no longer use its address as a key.");
+
     auto stmt = stmt_update_expression_parent;
 
     sqlite3_bind_int64(stmt, 1,
-                       reinterpret_cast<sqlite3_int64>(parent));
+                       reinterpret_cast<sqlite3_int64>(&parent));
     sqlite3_bind_int64(stmt, 2,
-                       reinterpret_cast<sqlite3_int64>(expr));
+                       reinterpret_cast<sqlite3_int64>(&expr));
 
     sqlite3_step(stmt);
 
