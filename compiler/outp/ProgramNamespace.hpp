@@ -2,7 +2,7 @@
 
 #include "RelationClass.hpp"
 
-namespace outp
+namespace knife::outp
 {
     struct ProgramNamespace
     {

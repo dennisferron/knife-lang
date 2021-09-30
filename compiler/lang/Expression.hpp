@@ -6,7 +6,7 @@
 #include <ostream>
 #include <ParserRuleContext.h>
 
-namespace lang
+namespace knife::lang
 {
     class ExprBase
     {

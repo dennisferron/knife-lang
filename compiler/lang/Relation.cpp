@@ -1,6 +1,6 @@
 #include "Relation.hpp"
 
-namespace lang
+namespace knife::lang
 {
 
     Relation::Relation(std::string name) :

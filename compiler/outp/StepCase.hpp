@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-namespace outp
+namespace knife::outp
 {
     struct Case_SetResult
     {

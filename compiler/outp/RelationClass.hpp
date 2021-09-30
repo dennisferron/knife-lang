@@ -2,7 +2,7 @@
 
 #include "StepCase.hpp"
 
-namespace outp
+namespace knife::outp
 {
     struct ParamVar
     {

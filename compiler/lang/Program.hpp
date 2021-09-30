@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace lang
+namespace knife::lang
 {
 
     struct Program

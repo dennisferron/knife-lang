@@ -6,6 +6,9 @@
 #include <ostream>
 #include <string>
 
+namespace knife::outp
+{
+
 class Output
 {
 protected:
@@ -64,3 +67,5 @@ public:
     OutputDbInit(std::ostream& ofs, std::string base_name);
     void write(outp::ProgramNamespace const& program);
 };
+
+}

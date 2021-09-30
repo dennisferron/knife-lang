@@ -2,6 +2,7 @@
 #include "outp/Output.hpp"
 
 using namespace knife;
+using namespace knife::outp;
 
 void OutputterImpl::output_header(std::ostream& os, outp::ProgramNamespace prog_ns, std::string output_base_name)
 {

@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+using namespace knife;
+
 lang::Relation& lang::Program::last_relation()
 {
     if (relations.empty())

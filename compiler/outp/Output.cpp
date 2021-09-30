@@ -2,6 +2,9 @@
 
 #include "../Json.hpp"
 
+using namespace knife;
+using namespace knife::outp;
+
 Output::Output(std::ostream& ofs)
     : document(ofs)
 {
