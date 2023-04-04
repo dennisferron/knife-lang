@@ -3,6 +3,7 @@
 #include <variant>
 #include <string>
 #include <vector>
+#include "Expression.hpp"
 
 namespace knife::lang
 {
@@ -21,6 +22,7 @@ namespace knife::lang
 
     struct YieldStatement
     {
+        lang::Expression result;
     };
 
     struct MemberStatement

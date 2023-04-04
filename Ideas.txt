@@ -5,3 +5,6 @@ Idea for unit testing the output strings:
 
 Idea:
     Design fluent interface for constructing expected data for tests.
+
+Crib CPP2 syntax from Herb Sutter's cppfront.
+Use ExternalProject_Add() to compile a WebAssembly version.

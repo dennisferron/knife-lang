@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(antlr4_demo)
+project(knife_lang)
 
 set(CMAKE_CXX_STANDARD 20)
 

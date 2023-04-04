@@ -27,6 +27,9 @@ struct TransformStatement
     {
         fresh_vars.push_back(stmt);
     }
+    void operator()(lang::YieldStatement const& stmt)
+    {
+    }
 };
 
 outp::RelationClass transform(const lang::Relation& inp_rel)

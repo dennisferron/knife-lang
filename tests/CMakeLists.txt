@@ -14,7 +14,8 @@ include(UseBoost)
 add_executable(knife-tests
         TestMain.cpp
         EnvironmentTests.cpp
-        CompilationTests.cpp
+        ParsingTests.cpp
+        TranslationTests.cpp
         Utility.hpp)
 
 set_target_properties(knife-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/compiler")

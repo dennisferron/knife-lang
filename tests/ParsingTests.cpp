@@ -6,7 +6,7 @@
 using namespace knife;
 using namespace knife::lang::expression_builder;
 
-BOOST_AUTO_TEST_SUITE(CompilationTests)
+BOOST_AUTO_TEST_SUITE(ParsingTests)
 
     lang::Expression parse(std::string input)
     {
